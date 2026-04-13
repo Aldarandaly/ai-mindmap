@@ -20,14 +20,14 @@ class DiagramController extends Controller
     public function index(Request $request, Project $project)
     {
         return response()->json(
-            $this->DiagramService->getProjectDiagrams($project, $request->user())
+            $this->diagramService->getProjectDiagrams($project, $request->user())
         );
     }
 
     public function show(Request $request, Diagram $diagram)
     {
         return response()->json(
-            $this->DiagramService->getDiagram($diagram, $request->user())
+            $this->diagramService->getDiagram($diagram, $request->user())
         );
     }
 
@@ -39,7 +39,7 @@ class DiagramController extends Controller
             'type' => 'nullable|in:class,erd,mindmap,auto',
         ]);
 
-        $diagram = $this->DiagramService->generate($request->all(), $request->user());
+        $diagram = $this->diagramService->generate($request->all(), $request->user());
 
         return response()->json($diagram, 201);
     }

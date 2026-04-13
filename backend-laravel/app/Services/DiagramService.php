@@ -28,23 +28,27 @@ class DiagramService
 
     public function generate($data, $user)
     {
-        // 1. get project
         $project = Project::findOrFail($data['project_id']);
 
-        // 2. check ownership
         if ($project->user_id !== $user->id) {
             abort(403);
         }
 
-        // 3. create diagram
         $diagram = $project->diagrams()->create([
             'input_text' => $data['input_text'],
             'type' => $data['type'] ?? 'auto',
-            'status' => 'pending'
+            'status' => 'processing'
         ]);
 
-        // 4. dispatch job
-        GenerateDiagramJob::dispatch($diagram);
+        $result = app(AIService::class)->generateDiagram(
+            $data['input_text'],
+            $data['type'] ?? 'auto'
+        );
+
+        $diagram->update([
+            'diagram_code' => $result['diagram_code'],
+            'status' => 'done'
+        ]);
 
         return $diagram;
     }
