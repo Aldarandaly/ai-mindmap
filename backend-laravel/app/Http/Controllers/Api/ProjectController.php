@@ -4,27 +4,41 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Project;
+use App\Services\ProjectService;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
+    // service layer
+    protected $projectService;
+    public function __construct(ProjectService $projectService)
+    {
+        $this->projectService = $projectService;
+    }
+
     public function index(Request $request)
     {
-        return response()->json($request->user()->projects);
+        return response()->json(
+            $this->projectService->getUserProjects($request->user())
+        );
     }
 
     public function store(Request $request)
     {
-        $request->validate(['name' => 'required|string|max:255']);
-        $project = $request->user()->projects()->create($request->only('name'));
-        return response()->json($project, 201);
+        $request->validate([
+            'name' => 'required|string|max:255'
+        ]);
+
+        return response()->json(
+            $this->projectService->createProject($request->user(), $request->name),
+            201
+        );
     }
 
     public function show(Request $request, Project $project)
     {
-        if ($project->user_id !== $request->user()->id) {
-            abort(403);
-        }
-        return response()->json($project);
+        return response()->json(
+            $this->projectService->getProject($project, $request->user())
+        );
     }
 }

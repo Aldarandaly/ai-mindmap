@@ -5,21 +5,30 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Diagram;
-use App\Jobs\GenerateDiagramJob;
 use Illuminate\Http\Request;
+use App\Services\DiagramService;
 
 class DiagramController extends Controller
 {
+    protected $diagramService;
+
+    public function __construct(DiagramService $diagramService)
+    {
+        $this->diagramService = $diagramService;
+    }
+
     public function index(Request $request, Project $project)
     {
-        if ($project->user_id !== $request->user()->id) abort(403);
-        return response()->json($project->diagrams);
+        return response()->json(
+            $this->DiagramService->getProjectDiagrams($project, $request->user())
+        );
     }
 
     public function show(Request $request, Diagram $diagram)
     {
-        if ($diagram->project->user_id !== $request->user()->id) abort(403);
-        return response()->json($diagram);
+        return response()->json(
+            $this->DiagramService->getDiagram($diagram, $request->user())
+        );
     }
 
     public function generate(Request $request)
@@ -30,16 +39,7 @@ class DiagramController extends Controller
             'type' => 'nullable|in:class,erd,mindmap,auto',
         ]);
 
-        $project = Project::findOrFail($request->project_id);
-        if ($project->user_id !== $request->user()->id) abort(403);
-
-        $diagram = $project->diagrams()->create([
-            'input_text' => $request->input_text,
-            'type' => $request->type ?? 'auto',
-            'status' => 'pending'
-        ]);
-
-        GenerateDiagramJob::dispatch($diagram);
+        $diagram = $this->DiagramService->generate($request->all(), $request->user());
 
         return response()->json($diagram, 201);
     }
