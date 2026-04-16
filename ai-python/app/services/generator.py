@@ -6,7 +6,7 @@ from app.prompts.erd_prompt import get_erd_prompt
 from app.prompts.mindmap_prompt import get_mindmap_prompt
 
 load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+client = Groq(api_key=os.getenv("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"))
 
 def get_prompt(text: str, diagram_type: str) -> str:
     if diagram_type == "erd":
