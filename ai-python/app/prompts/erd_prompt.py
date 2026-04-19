@@ -1,14 +1,19 @@
 def get_erd_prompt(text: str) -> str:
     return f"""
-You are a database architect. Analyze the text below and generate a
-Mermaid.js ENTITY RELATIONSHIP DIAGRAM (ERD).
+Analyze the text below following these steps to create a perfect Mermaid.js ERD (Entity Relationship Diagram):
 
-Rules:
-- Output ONLY valid Mermaid code starting with: erDiagram
-- Identify entities, their attributes, primary keys, and relationships
-- Show cardinalities: ||--||, ||--|{{, }}|--|{{
-- Do NOT include any explanation, just the Mermaid code
+STEP 1: Identify all main entities (tables).
+STEP 2: Extract attributes for each entity and identify the Primary Key (PK).
+STEP 3: Determine the relationships and their cardinalities (||--||, ||--|{, }|--|{, etc.).
+STEP 4: Structure the code using Mermaid erDiagram syntax.
+STEP 5: Output ONLY the final Mermaid code.
 
-Text:
+Rules for Output:
+- Start with 'erDiagram'.
+- Use valid relationship notation.
+- Attributes should be listed inside braces { } after the entity.
+- No explanations or extra text.
+
+Text to Analyze:
 {text}
 """

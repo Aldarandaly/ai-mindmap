@@ -8,7 +8,7 @@ from app.prompts.analyse_prompt import get_analyse_prompt
 from app.prompts.explain_prompt import get_explain_prompt
 
 load_dotenv()
-client = Groq(api_key=os.getenv("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"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def get_prompt(text: str, diagram_type: str) -> str:
     if diagram_type == "erd":
@@ -19,12 +19,20 @@ def get_prompt(text: str, diagram_type: str) -> str:
         return get_class_prompt(text)
 
 def clean_mermaid_code(raw: str) -> str:
-    raw = raw.strip()
-    if raw.startswith("```"):
-        lines = raw.split("\n")
-        lines = [l for l in lines if not l.startswith("```")]
-        raw = "\n".join(lines).strip()
-    return raw
+    # Remove markdown code blocks if present
+    raw = raw.replace("```mermaid", "").replace("```", "").strip()
+    
+    # Common hallucinations to remove
+    lines = raw.split("\n")
+    cleaned_lines = []
+    for line in lines:
+        # Filter out lines that look like AI chatter but keep Mermaid keywords
+        if any(keyword in line.lower() for keyword in ["classdiagram", "erd_diagram", "mindmap", "graph", "subgraph", "-->", "--|", "||", "{", "}", "[", "]"]):
+            cleaned_lines.append(line)
+        elif line.strip() == "":
+            cleaned_lines.append(line)
+            
+    return "\n".join(cleaned_lines).strip()
 
 def generate_mermaid(text: str, diagram_type: str) -> str:
     prompt = get_prompt(text, diagram_type)
