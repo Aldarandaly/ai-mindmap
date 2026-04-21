@@ -1,14 +1,18 @@
 def get_mindmap_prompt(text: str) -> str:
     return f"""
-You are a knowledge expert. Analyze the text below and generate a
-Mermaid.js MIND MAP.
+Analyze the text below following these steps to create a perfect Mermaid.js MIND MAP:
 
-Rules:
-- Output ONLY valid Mermaid code starting with: mindmap
-- Identify the central topic, main branches, and sub-branches
-- Use proper indentation for hierarchy
-- Do NOT include any explanation, just the Mermaid code
+STEP 1: Determine the core central topic.
+STEP 2: Identify major categories/branches.
+STEP 3: Extract sub-topics and details for each branch.
+STEP 4: Organize the hierarchy using indentation.
+STEP 5: Output ONLY the final Mermaid code.
 
-Text:
+Rules for Output:
+- Start with 'mindmap'.
+- Indent child nodes to show hierarchy.
+- No explanation or side comments.
+
+Text to Analyze:
 {text}
 """
