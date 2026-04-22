@@ -1,4 +1,6 @@
 from fastapi import APIRouter, HTTPException
+from app.schemas.diagram import GenerateRequest, GenerateResponse
+from app.services.detector import detect_type
 from app.services.generator import generate_mermaid, analyze_text, explain_diagram
 
 router = APIRouter()
@@ -20,7 +22,7 @@ async def generate_diagram(request: GenerateRequest):
         elif request.mode == "explain":
             diagram_code = generate_mermaid(request.text, diagram_type)
             explanation = explain_diagram(request.text, diagram_code)
-        else: # Default: generate
+        else:  # Default: generate
             diagram_code = generate_mermaid(request.text, diagram_type)
 
         return GenerateResponse(

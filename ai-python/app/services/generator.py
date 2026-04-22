@@ -21,7 +21,7 @@ def get_prompt(text: str, diagram_type: str) -> str:
 def clean_mermaid_code(raw: str) -> str:
     # Remove markdown code blocks if present
     raw = raw.replace("```mermaid", "").replace("```", "").strip()
-    
+    return raw
     # Common hallucinations to remove
     lines = raw.split("\n")
     cleaned_lines = []

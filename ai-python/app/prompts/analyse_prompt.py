@@ -1,14 +1,13 @@
 def get_analyse_prompt(text: str) -> str:
     return f"""
-Analyze the text below and provide a clear, professional explanation of its contents.
+Analyze the following text and extract:
+1. Main entities or concepts
+2. Relationships between them
+3. Suggested diagram type (erd, class, or mindmap)
+4. Key attributes for each entity
 
-Instructions:
-- Identify the main topic and key entities.
-- Explain the relationships and processes described.
-- Use bullet points for readability.
-- Respond in the SAME LANGUAGE as the input text.
-- Do NOT mention Mermaid, diagrams, or technical code. Just analyze the content.
-
-Text to Analyze:
+Text:
 {text}
+
+Provide a clear structured analysis.
 """
