@@ -1,27 +1,27 @@
-import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/network/api_endpoint.dart';
+import '../../../core/network/api_endpoints.dart';
+import '../../../core/network/api_exception.dart';
 
 class AuthRepository {
-  final Dio _dio = ApiClient.instance;
+  final ApiClient _client = ApiClient();
 
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
     try {
-      final response = await _dio.post(
+      final response = await _client.post(
         ApiEndpoints.login,
         data: {'email': email, 'password': password},
       );
-      return {'success': true, 'data': response.data};
-    } on DioException catch (e) {
-      return {
-        'success': false,
-        'message': e.response?.data is Map
-            ? e.response?.data['message'] ?? 'Something went wrong'
-            : e.response?.data.toString() ?? 'Something went wrong',
-      };
+
+      // Save token automatically
+      final token = response['token'] as String?;
+      if (token != null) await _client.saveToken(token);
+
+      return {'success': true, 'data': response};
+    } on ApiException catch (e) {
+      return {'success': false, 'message': e.message};
     }
   }
 
@@ -31,7 +31,7 @@ class AuthRepository {
     required String password,
   }) async {
     try {
-      final response = await _dio.post(
+      final response = await _client.post(
         ApiEndpoints.register,
         data: {
           'name': name,
@@ -40,14 +40,23 @@ class AuthRepository {
           'password_confirmation': password,
         },
       );
-      return {'success': true, 'data': response.data};
-    } on DioException catch (e) {
-      return {
-        'success': false,
-        'message': e.response?.data is Map
-            ? e.response?.data['message'] ?? 'Something went wrong'
-            : e.response?.data.toString() ?? 'Something went wrong',
-      };
+
+      final token = response['token'] as String?;
+      if (token != null) await _client.saveToken(token);
+
+      return {'success': true, 'data': response};
+    } on ApiException catch (e) {
+      return {'success': false, 'message': e.message};
     }
   }
+
+  Future<void> logout() async {
+    try {
+      await _client.post(ApiEndpoints.logout);
+    } finally {
+      await _client.clearToken();
+    }
+  }
+
+  Future<bool> isLoggedIn() => _client.hasToken();
 }

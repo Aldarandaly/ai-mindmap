@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 // test
 Route::get('/test', function () {
-    return Http::post('http://127.0.0.1:8001/generate', [
+    return Http::post('http://127.0.0.1:8001/generator', [
         'text' => 'test',
         'type' => 'class'
     ])->json();

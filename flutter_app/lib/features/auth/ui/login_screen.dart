@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
-import '../data/auth_repository.dart';        // ← جديد
-import '../data/auth_service.dart';           // ← جديد
-import '../../projects/ui/projects_screen.dart'; // ← جديد
+import '../data/auth_repository.dart';
+import '../../projects/ui/projects_screen.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import 'register_screen.dart';
@@ -30,35 +29,34 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() async {
-  if (!_formKey.currentState!.validate()) return;
-  setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
 
-  final result = await _authRepository.login(
-    email: _emailController.text.trim(),
-    password: _passwordController.text,
-  );
+    final result = await _authRepository.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
 
-  setState(() => _isLoading = false);
+    setState(() => _isLoading = false);
 
-  if (result['success']) {
-    await AuthService.saveToken(result['data']['token']);
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ProjectsScreen()),
-      );
-    }
-  } else {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message']),
-          backgroundColor: const Color(0xFFEF4444),
-        ),
-      );
+    if (result['success'] == true) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProjectsScreen()),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Something went wrong'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -74,12 +72,11 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 const SizedBox(height: AppSizes.xxl),
 
-                // ── Logo ──
+                // Logo
                 _buildLogo(),
-
                 const SizedBox(height: AppSizes.xl),
 
-                // ── Title ──
+                // Title
                 const Text(
                   'Welcome back',
                   style: TextStyle(
@@ -96,10 +93,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: AppColors.textSecondary,
                   ),
                 ),
-
                 const SizedBox(height: AppSizes.xl),
 
-                // ── Fields ──
+                // Fields
                 AppTextField(
                   label: 'Email',
                   hint: 'email@example.com',
@@ -112,7 +108,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-
                 const SizedBox(height: AppSizes.md),
 
                 AppTextField(
@@ -121,16 +116,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   isPassword: true,
                   validator: (val) {
-                    if (val == null || val.isEmpty)
-                      return 'Password is required';
+                    if (val == null || val.isEmpty) return 'Password is required';
                     if (val.length < 6) return 'Minimum 6 characters';
                     return null;
                   },
                 ),
-
                 const SizedBox(height: AppSizes.sm),
 
-                // ── Forgot Password ──
+                // Forgot Password
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
@@ -144,29 +137,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: AppSizes.md),
 
-                // ── Login Button ──
+                // Login Button
                 AppButton(
                   label: 'Sign in',
                   onPressed: _login,
                   isLoading: _isLoading,
                 ),
-
                 const SizedBox(height: AppSizes.lg),
 
-                // ── Divider ──
+                // Divider
                 _buildDivider(),
-
                 const SizedBox(height: AppSizes.lg),
 
-                // ── Google Button ──
+                // Google Button
                 _buildGoogleButton(),
-
                 const SizedBox(height: AppSizes.xl),
 
-                // ── Register Link ──
+                // Register Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -180,9 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
                       ),
                       child: const Text(
                         'Create one',
@@ -203,8 +190,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ── Helpers ──
-
   Widget _buildLogo() {
     return Container(
       width: 64,
@@ -216,11 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: const Center(
         child: Text(
           'D',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -234,10 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
           child: Text(
             'or',
-            style: TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: AppSizes.fontSm,
-            ),
+            style: TextStyle(color: AppColors.textTertiary, fontSize: AppSizes.fontSm),
           ),
         ),
         const Expanded(child: Divider(color: AppColors.border)),
@@ -257,22 +235,14 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(AppSizes.radiusMd),
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // استبدل بصورة Google لو عندك
-            const Icon(
-              Icons.g_mobiledata,
-              size: 20,
-              color: AppColors.textSecondary,
-            ),
-            const SizedBox(width: AppSizes.sm),
-            const Text(
+            Icon(Icons.g_mobiledata, size: 20, color: AppColors.textSecondary),
+            SizedBox(width: AppSizes.sm),
+            Text(
               'Continue with Google',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: AppSizes.fontMd,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: AppSizes.fontMd),
             ),
           ],
         ),

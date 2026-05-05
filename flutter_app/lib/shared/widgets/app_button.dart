@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 
 class AppButton extends StatelessWidget {
@@ -50,7 +50,7 @@ class AppButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: buttonColor,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: buttonColor.withOpacity(0.6),
+          disabledBackgroundColor: buttonColor.withValues(alpha: 0.6),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.radiusMd),
