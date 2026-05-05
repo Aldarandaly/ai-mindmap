@@ -7,7 +7,7 @@ import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_sizes.dart';
 
 class DiagramViewerScreen extends StatefulWidget {
-  final DiagramModel diagram;
+  final Diagram diagram;
 
   const DiagramViewerScreen({super.key, required this.diagram});
 
@@ -184,7 +184,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.diagram.name,
+            widget.diagram.name ?? 'Untitled',
             style: AppTextStyles.h3,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

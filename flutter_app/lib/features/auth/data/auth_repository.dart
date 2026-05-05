@@ -16,8 +16,8 @@ class AuthRepository {
       );
 
       // Save token automatically
-      final token = response['token'] as String?;
-      if (token != null) await _client.saveToken(token);
+      final name = response['user']?['name'] as String?;
+      if (name != null) await _client.saveUserName(name);
 
       return {'success': true, 'data': response};
     } on ApiException catch (e) {

@@ -10,6 +10,7 @@ import 'widgets/diagram_card.dart';
 import 'create_diagram_screen.dart';
 import 'diagram_viewer_screen.dart';
 
+
 class ProjectDetailScreen extends StatefulWidget {
   final ProjectModel project;
   const ProjectDetailScreen({super.key, required this.project});
@@ -21,8 +22,8 @@ class ProjectDetailScreen extends StatefulWidget {
 class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   final _repo = DiagramRepository();
 
-  List<DiagramModel> _diagrams = [];
-  List<DiagramModel> _filtered = [];
+  List<Diagram> _diagrams = [];
+  List<Diagram> _filtered = [];
   bool _isLoading = true;
   String? _error;
   String _selectedType = 'all';
@@ -36,18 +37,25 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   Future<void> _loadDiagrams() async {
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
-      final diagrams = await _repo.getProjectDiagrams(widget.project.id);
+      final diagrams = await _repo.getDiagrams(widget.project.id);
       setState(() {
         _diagrams = diagrams;
         _filterDiagrams();
         _isLoading = false;
       });
     } on ApiException catch (e) {
-      setState(() { _error = e.message; _isLoading = false; });
+      setState(() {
+        _error = e.message;
+        _isLoading = false;
+      });
     }
   }
+
 
   void _filterDiagrams() {
     setState(() {
@@ -63,7 +71,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   void _goToCreateDiagram() async {
-    final result = await Navigator.push<DiagramModel>(
+    final result = await Navigator.push<Diagram>(
       context,
       MaterialPageRoute(
         builder: (_) => CreateDiagramScreen(project: widget.project),
@@ -88,15 +96,20 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             // ── Header ──────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSizes.screenPadding, AppSizes.md,
-                AppSizes.screenPadding, 0,
+                AppSizes.screenPadding,
+                AppSizes.md,
+                AppSizes.screenPadding,
+                0,
               ),
               child: Row(
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new,
-                        size: AppSizes.iconSm, color: AppColors.textPrimary),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      size: AppSizes.iconSm,
+                      color: AppColors.textPrimary,
+                    ),
                     padding: EdgeInsets.zero,
                   ),
                   const SizedBox(width: AppSizes.sm),
@@ -130,11 +143,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.screenPadding),
+                  horizontal: AppSizes.screenPadding,
+                ),
                 children: _types.map((type) {
                   final isSelected = _selectedType == type;
-                  final label = type == 'all' ? 'All'
-                      : type == 'mindmap' ? 'Mind Map'
+                  final label = type == 'all'
+                      ? 'All'
+                      : type == 'mindmap'
+                      ? 'Mind Map'
                       : type.toUpperCase();
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -143,12 +159,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
                               : AppColors.surface,
-                          borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                          borderRadius: BorderRadius.circular(
+                            AppSizes.radiusRound,
+                          ),
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary
@@ -179,10 +199,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               child: _isLoading
                   ? _buildLoading()
                   : _error != null
-                      ? _buildError()
-                      : _filtered.isEmpty
-                          ? _buildEmpty()
-                          : _buildList(),
+                  ? _buildError()
+                  : _filtered.isEmpty
+                  ? _buildEmpty()
+                  : _buildList(),
             ),
           ],
         ),
@@ -220,14 +240,20 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.wifi_off_rounded, size: 48, color: AppColors.textTertiary),
+          const Icon(
+            Icons.wifi_off_rounded,
+            size: 48,
+            color: AppColors.textTertiary,
+          ),
           const SizedBox(height: AppSizes.md),
           Text(_error!, style: AppTextStyles.bodyMedium),
           const SizedBox(height: AppSizes.md),
           TextButton(
             onPressed: _loadDiagrams,
-            child: const Text('Try again',
-                style: TextStyle(color: AppColors.primary)),
+            child: const Text(
+              'Try again',
+              style: TextStyle(color: AppColors.primary),
+            ),
           ),
         ],
       ),
@@ -240,40 +266,56 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 72, height: 72,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(AppSizes.radiusXl),
             ),
-            child: const Icon(Icons.auto_awesome_rounded,
-                size: 36, color: AppColors.textTertiary),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              size: 36,
+              color: AppColors.textTertiary,
+            ),
           ),
           const SizedBox(height: AppSizes.lg),
-          const Text('No diagrams yet',
-              style: TextStyle(
-                fontSize: AppSizes.fontXl,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              )),
+          const Text(
+            'No diagrams yet',
+            style: TextStyle(
+              fontSize: AppSizes.fontXl,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: AppSizes.xs),
-          const Text('Generate your first diagram',
-              style: TextStyle(
-                  fontSize: AppSizes.fontMd,
-                  color: AppColors.textSecondary)),
+          const Text(
+            'Generate your first diagram',
+            style: TextStyle(
+              fontSize: AppSizes.fontMd,
+              color: AppColors.textSecondary,
+            ),
+          ),
           const SizedBox(height: AppSizes.xl),
           ElevatedButton.icon(
             onPressed: _goToCreateDiagram,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.lg, vertical: AppSizes.md),
+                horizontal: AppSizes.lg,
+                vertical: AppSizes.md,
+              ),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
+                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              ),
             ),
             icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('New diagram',
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w600)),
+            label: const Text(
+              'New diagram',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -286,17 +328,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       color: AppColors.primary,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.screenPadding, vertical: AppSizes.sm),
+          horizontal: AppSizes.screenPadding,
+          vertical: AppSizes.sm,
+        ),
         itemCount: _filtered.length,
         itemBuilder: (_, i) => DiagramCard(
           diagram: _filtered[i],
           onTap: () {
             Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => DiagramViewerScreen(diagram: _filtered[i]),
-  ),
-);
+              context,
+              MaterialPageRoute(
+                builder: (_) => DiagramViewerScreen(diagram: _filtered[i]),
+              ),
+            );
           },
         ),
       ),

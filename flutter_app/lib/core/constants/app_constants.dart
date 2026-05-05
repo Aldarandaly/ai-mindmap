@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
+
 class AppConstants {
   // ── API ───────────────────────────────────────────────────
-  // Android Emulator → 10.0.2.2 = localhost
-  // Device حقيقي   → IP جهازك e.g. http://192.168.1.x:8000/api
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  static String get baseUrl {
+    if (kIsWeb) return 'http://localhost:8000/api';
+    return 'http://10.0.2.2:8000/api';
+  }
 
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

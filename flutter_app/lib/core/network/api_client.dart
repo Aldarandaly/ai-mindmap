@@ -6,7 +6,10 @@ import 'api_exception.dart';
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
-  ApiClient._internal();
+  
+  ApiClient._internal() {
+    _loadTokenOnInit();
+  }
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -19,7 +22,24 @@ class ApiClient {
     ),
   );
 
+  // ── Token Auto Load ───────────────────────────────────────
+
+  Future<void> _loadTokenOnInit() async {
+    final token = await _storage.read(key: AppConstants.tokenKey);
+    if (token != null) {
+      _dio.options.headers['Authorization'] = 'Bearer $token';
+    }
+  }
+
   // ── Token Management ──────────────────────────────────────
+
+  Future<void> saveUserName(String name) async {
+    await _storage.write(key: 'user_name', value: name);
+  }
+
+  Future<String?> getUserName() async {
+    return await _storage.read(key: 'user_name');
+  }
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: AppConstants.tokenKey, value: token);
@@ -111,7 +131,8 @@ class ApiClient {
           return const NetworkException();
         }
         return ApiException(
-          message: e.response?.data?['message']?.toString() ??
+          message:
+              e.response?.data?['message']?.toString() ??
               'Something went wrong.',
           statusCode: e.response?.statusCode,
         );

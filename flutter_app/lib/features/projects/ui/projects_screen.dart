@@ -10,6 +10,9 @@ import 'projects_model.dart';
 import 'widgets/project_card.dart';
 import 'widgets/create_project_modal.dart';
 
+String _initials = '';
+final _apiClient = ApiClient();
+
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
 
@@ -29,8 +32,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProjects();
+    _init();
     _searchController.addListener(_onSearch);
+  }
+
+  Future<void> _init() async {
+    await ApiClient().loadToken();
+    await _loadProjects();
+    await _loadInitials();
   }
 
   @override
@@ -45,24 +54,41 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       _filtered = q.isEmpty
           ? _projects
           : _projects
-              .where((p) =>
-                  p.name.toLowerCase().contains(q) ||
-                  p.description.toLowerCase().contains(q))
-              .toList();
+                .where(
+                  (p) =>
+                      p.name.toLowerCase().contains(q) ||
+                      p.description.toLowerCase().contains(q),
+                )
+                .toList();
     });
   }
 
   Future<void> _loadProjects() async {
-    setState(() { _isLoading = true; _error = null; });
-    try {
-      final projects = await _repo.getProjects();
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _repo.getProjects();
+
+    if (result['success']) {
       setState(() {
-        _projects = projects;
-        _filtered = projects;
+        _projects = List<ProjectModel>.from(result['data']);
+        _filtered = _projects;
         _isLoading = false;
       });
-    } on ApiException catch (e) {
-      setState(() { _error = e.message; _isLoading = false; });
+    } else {
+      setState(() {
+        _error = result['message'];
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadInitials() async {
+    final name = await _apiClient.getUserName();
+    if (name != null && name.isNotEmpty) {
+      setState(() => _initials = name[0].toUpperCase());
     }
   }
 
@@ -103,8 +129,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             // ── Header ──────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSizes.screenPadding, AppSizes.lg,
-                AppSizes.screenPadding, 0,
+                AppSizes.screenPadding,
+                AppSizes.lg,
+                AppSizes.screenPadding,
+                0,
               ),
               child: Row(
                 children: [
@@ -138,12 +166,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       height: 40,
                       decoration: BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusRound,
+                        ),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
-                          'JD',
-                          style: TextStyle(
+                          _initials,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: AppSizes.fontSm,
                             fontWeight: FontWeight.w600,
@@ -212,10 +242,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               child: _isLoading
                   ? _buildLoading()
                   : _error != null
-                      ? _buildError()
-                      : _filtered.isEmpty
-                          ? _buildEmpty()
-                          : _buildList(),
+                  ? _buildError()
+                  : _filtered.isEmpty
+                  ? _buildEmpty()
+                  : _buildList(),
             ),
           ],
         ),
@@ -250,7 +280,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off_rounded, size: 56, color: AppColors.textTertiary),
+            const Icon(
+              Icons.wifi_off_rounded,
+              size: 56,
+              color: AppColors.textTertiary,
+            ),
             const SizedBox(height: AppSizes.md),
             Text(
               _error ?? 'Something went wrong',
@@ -263,8 +297,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
             const SizedBox(height: AppSizes.lg),
             TextButton(
               onPressed: _loadProjects,
-              child: const Text('Try again',
-                  style: TextStyle(color: AppColors.primary)),
+              child: const Text(
+                'Try again',
+                style: TextStyle(color: AppColors.primary),
+              ),
             ),
           ],
         ),
@@ -326,7 +362,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text(
                 'Create project',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -404,7 +443,8 @@ class _ShimmerCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 50, height: 50,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
               color: AppColors.border,
               borderRadius: BorderRadius.circular(12),

@@ -1,50 +1,35 @@
 import '../../../core/network/api_client.dart';
-import '../../../core/network/api_endpoints.dart';
-import '../../../core/network/api_exception.dart';
-import 'diagram_model.dart';
+import '../data/diagram_model.dart';
 
 class DiagramRepository {
-  final ApiClient _client = ApiClient();
+  final _client = ApiClient();
 
-  Future<List<DiagramModel>> getProjectDiagrams(int projectId) async {
-    try {
-      final response = await _client.get(ApiEndpoints.projectDiagrams(projectId));
-      final data = response['data'] as List<dynamic>? ?? [];
-      return data.map((e) => DiagramModel.fromJson(e)).toList();
-    } on ApiException {
-      rethrow;
-    }
+  Future<List<Diagram>> getDiagrams(int projectId) async {
+    final response = await _client.get('/projects/$projectId/diagrams');
+    final List data = response['data'] ?? [];
+    return data.map((e) => Diagram.fromJson(e)).toList();
   }
 
-  Future<DiagramModel> generateDiagram({
+  Future<Diagram> generateDiagram({
     required int projectId,
     required String name,
-    required String description, // ✅ كان text، اتغير لـ description
+    required String description,
     required String type,
   }) async {
-    try {
-      final response = await _client.post(
-        ApiEndpoints.generateDiagram,
-        data: {
-          'project_id': projectId,
-          'name': name,
-          'text': description, // بنبعته للـ API كـ text زي ما هو متوقع
-          'type': type,
-          'mode': 'generate',
-        },
-      );
-      return DiagramModel.fromJson(response['data'] ?? response);
-    } on ApiException {
-      rethrow;
-    }
+    final response = await _client.post(
+      '/diagrams/generate',
+      data: {
+        'project_id': projectId,
+        'name': name,
+        'input_text': description,
+        'type': type,
+      },
+    );
+    return Diagram.fromJson(response['data'] ?? response);
   }
 
-  Future<DiagramModel> getDiagram(int id) async {
-    try {
-      final response = await _client.get(ApiEndpoints.diagramById(id));
-      return DiagramModel.fromJson(response['data'] ?? response);
-    } on ApiException {
-      rethrow;
-    }
+  Future<Diagram> getDiagram(int id) async {
+    final response = await _client.get('/diagrams/$id');
+    return Diagram.fromJson(response['data'] ?? response);
   }
 }

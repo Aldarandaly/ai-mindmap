@@ -5,7 +5,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../data/diagram_model.dart';
 
 class DiagramCard extends StatelessWidget {
-  final DiagramModel diagram;
+  final Diagram diagram;
   final VoidCallback onTap;
 
   const DiagramCard({super.key, required this.diagram, required this.onTap});
