@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'core/network/api_client.dart';
-import 'features/auth/data/auth_service.dart';
 import 'features/auth/ui/login_screen.dart';
 import 'features/projects/ui/projects_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final token = await AuthService.getToken();
-  if (token != null) ApiClient.setToken(token);
+  // Load token from secure storage into dio headers
+  final client = ApiClient();
+  await client.loadToken();
+  final isLoggedIn = await client.hasToken();
 
-  runApp(MyApp(isLoggedIn: token != null));
+  runApp(MyApp(isLoggedIn: isLoggedIn));
 }
 
 class MyApp extends StatelessWidget {

@@ -29,4 +29,25 @@ class AppColors {
   static const Color successLight = Color(0xFFD1FAE5);
   static const Color warning = Color(0xFFF59E0B);
   static const Color warningLight = Color(0xFFFEF3C7);
+
+  // Diagram type colors (للـ chips والـ badges)
+  static const Color diagramErd = Color(0xFFEF4444);
+  static const Color diagramErdBg = Color(0x1FEF4444);
+  static const Color diagramClass = Color(0xFF0D9488);
+  static const Color diagramClassBg = Color(0x1F0D9488);
+  static const Color diagramMindmap = Color(0xFFF59E0B);
+  static const Color diagramMindmapBg = Color(0x1FF59E0B);
+  static const Color diagramAuto = Color(0xFF4F46E5);
+  static const Color diagramAutoBg = Color(0x1F4F46E5);
+
+  // Card (محتاجينه للـ UI)
+  static const Color card = Color(0xFF1E1C2E);
+  static const Color cardLight = Color(0xFF252336);
+
+  // Shimmer
+  static const Color shimmerBase = Color(0xFF1E1C2E);
+  static const Color shimmerHighlight = Color(0xFF2A2840);
+
+  // Overlay
+  static const Color overlay = Color(0x99000000);
 }

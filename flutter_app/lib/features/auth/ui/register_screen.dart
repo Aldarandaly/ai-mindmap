@@ -4,7 +4,6 @@ import '../../../core/constants/app_sizes.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
 import '../data/auth_repository.dart';
-import '../data/auth_service.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -41,31 +40,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Color _strengthColor(int strength) {
     switch (strength) {
-      case 1:
-        return AppColors.error;
-      case 2:
-        return AppColors.warning;
-      case 3:
-        return AppColors.accent;
-      case 4:
-        return AppColors.success;
-      default:
-        return AppColors.border;
+      case 1: return AppColors.error;
+      case 2: return AppColors.warning;
+      case 3: return AppColors.accent;
+      case 4: return AppColors.success;
+      default: return AppColors.border;
     }
   }
 
   String _strengthLabel(int strength) {
     switch (strength) {
-      case 1:
-        return 'Weak';
-      case 2:
-        return 'Fair';
-      case 3:
-        return 'Good';
-      case 4:
-        return 'Strong';
-      default:
-        return '';
+      case 1: return 'Weak';
+      case 2: return 'Fair';
+      case 3: return 'Good';
+      case 4: return 'Strong';
+      default: return '';
     }
   }
 
@@ -81,7 +70,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = false);
 
-    if (result['success']) {
+    if (result['success'] == true) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -98,7 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message']),
+            content: Text(result['message'] ?? 'Something went wrong'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -121,19 +110,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Back Button ──
+                // Back Button
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    size: AppSizes.iconSm,
-                  ),
+                  icon: const Icon(Icons.arrow_back_ios_new, size: AppSizes.iconSm),
                   padding: EdgeInsets.zero,
                 ),
-
                 const SizedBox(height: AppSizes.lg),
 
-                // ── Title ──
+                // Title
                 const Text(
                   'Create account',
                   style: TextStyle(
@@ -145,15 +130,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: AppSizes.xs),
                 const Text(
                   'Start building diagrams in minutes',
-                  style: TextStyle(
-                    fontSize: AppSizes.fontMd,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: AppSizes.fontMd, color: AppColors.textSecondary),
                 ),
-
                 const SizedBox(height: AppSizes.xl),
 
-                // ── Fields ──
+                // Fields
                 AppTextField(
                   label: 'Full name',
                   hint: 'Jane Doe',
@@ -164,7 +145,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-
                 const SizedBox(height: AppSizes.md),
 
                 AppTextField(
@@ -179,18 +159,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-
                 const SizedBox(height: AppSizes.md),
 
-                // ── Password + Strength ──
+                // Password + Strength
                 AppTextField(
                   label: 'Password',
                   hint: '••••••••',
                   controller: _passwordController,
                   isPassword: true,
+                  onChanged: (_) => setState(() {}),
                   validator: (val) {
-                    if (val == null || val.isEmpty)
-                      return 'Password is required';
+                    if (val == null || val.isEmpty) return 'Password is required';
                     if (val.length < 6) return 'Minimum 6 characters';
                     return null;
                   },
@@ -205,9 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           margin: EdgeInsets.only(right: i < 3 ? 4 : 0),
                           height: 4,
                           decoration: BoxDecoration(
-                            color: i < strength
-                                ? _strengthColor(strength)
-                                : AppColors.border,
+                            color: i < strength ? _strengthColor(strength) : AppColors.border,
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
@@ -227,52 +204,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                 const SizedBox(height: AppSizes.xl),
 
-                // ── Register Button ──
+                // Register Button
                 AppButton(
                   label: 'Create account',
                   onPressed: _register,
                   isLoading: _isLoading,
                 ),
-
                 const SizedBox(height: AppSizes.lg),
 
-                // ── Terms ──
+                // Terms
                 Center(
                   child: RichText(
                     textAlign: TextAlign.center,
                     text: const TextSpan(
-                      style: TextStyle(
-                        fontSize: AppSizes.fontSm,
-                        color: AppColors.textTertiary,
-                      ),
+                      style: TextStyle(fontSize: AppSizes.fontSm, color: AppColors.textTertiary),
                       children: [
                         TextSpan(text: 'By signing up, you agree to our '),
-                        TextSpan(
-                          text: 'Terms',
-                          style: TextStyle(color: AppColors.primary),
-                        ),
+                        TextSpan(text: 'Terms', style: TextStyle(color: AppColors.primary)),
                         TextSpan(text: ' and '),
-                        TextSpan(
-                          text: 'Privacy Policy',
-                          style: TextStyle(color: AppColors.primary),
-                        ),
+                        TextSpan(text: 'Privacy Policy', style: TextStyle(color: AppColors.primary)),
                       ],
                     ),
                   ),
                 ),
-
                 const SizedBox(height: AppSizes.lg),
 
-                // ── Login Link ──
+                // Login Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
                       'Already have an account? ',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: AppSizes.fontMd,
-                      ),
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: AppSizes.fontMd),
                     ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),

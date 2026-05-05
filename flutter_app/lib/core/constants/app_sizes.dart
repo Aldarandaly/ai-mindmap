@@ -37,4 +37,7 @@ class AppSizes {
   // Card
   static const double cardPadding = 16;
   static const double cardRadius = 16;
+
+  // Screen padding
+  static const double screenPadding = 20;
 }
