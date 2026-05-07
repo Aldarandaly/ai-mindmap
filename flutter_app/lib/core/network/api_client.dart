@@ -6,7 +6,7 @@ import 'api_exception.dart';
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
-  
+
   ApiClient._internal() {
     _loadTokenOnInit();
   }
@@ -65,48 +65,41 @@ class ApiClient {
 
   // ── HTTP Methods ──────────────────────────────────────────
 
-  Future<Map<String, dynamic>> get(String path) async {
+  Future<dynamic> get(String path) async {
     try {
       final response = await _dio.get(path);
-      return response.data as Map<String, dynamic>;
+      return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Map<String, dynamic>> post(
-    String path, {
-    Map<String, dynamic>? data,
-  }) async {
+  Future<dynamic> post(String path, {Map<String, dynamic>? data}) async {
     try {
       final response = await _dio.post(path, data: data);
-      return response.data as Map<String, dynamic>;
+      return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Map<String, dynamic>> put(
-    String path, {
-    Map<String, dynamic>? data,
-  }) async {
+  Future<dynamic> put(String path, {Map<String, dynamic>? data}) async {
     try {
       final response = await _dio.put(path, data: data);
-      return response.data as Map<String, dynamic>;
+      return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Map<String, dynamic>> delete(String path) async {
+  Future<dynamic> delete(String path) async {
     try {
       final response = await _dio.delete(path);
-      return response.data as Map<String, dynamic>;
+      return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
-
   // ── Error Handler ─────────────────────────────────────────
 
   ApiException _handleError(DioException e) {

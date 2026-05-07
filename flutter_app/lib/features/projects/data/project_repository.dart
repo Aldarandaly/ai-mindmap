@@ -1,5 +1,5 @@
 import '../../../core/network/api_client.dart';
-import '../data/project_model.dart';
+import 'projects_model.dart';
 
 class ProjectRepository {
   final _client = ApiClient();
@@ -7,10 +7,10 @@ class ProjectRepository {
   Future<Map<String, dynamic>> getProjects() async {
     try {
       final response = await _client.get('/projects');
-      final List data = response['data'] ?? [];
+      final List data = response is List ? response : response['data'] ?? [];
       return {
         'success': true,
-        'data': data.map((e) => Project.fromJson(e)).toList(),
+        'data': data.map((e) => ProjectModel.fromJson(e)).toList(),
       };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
@@ -20,9 +20,10 @@ class ProjectRepository {
   Future<Map<String, dynamic>> createProject(String name) async {
     try {
       final response = await _client.post('/projects', data: {'name': name});
+      final projectData = response is Map ? response['data'] ?? response : response;
       return {
         'success': true,
-        'data': Project.fromJson(response['data'] ?? response),
+        'data': ProjectModel.fromJson(projectData),
       };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
@@ -34,7 +35,7 @@ class ProjectRepository {
       final response = await _client.get('/projects/$id');
       return {
         'success': true,
-        'data': Project.fromJson(response['data'] ?? response),
+        'data': ProjectModel.fromJson(response['data'] ?? response),
       };
     } catch (e) {
       return {'success': false, 'message': e.toString()};

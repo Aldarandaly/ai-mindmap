@@ -35,9 +35,10 @@ class DiagramService
         }
 
         $diagram = $project->diagrams()->create([
+            'name'       => $data['name'] ?? 'Untitled',
             'input_text' => $data['input_text'],
-            'type' => $data['type'] ?? 'auto',
-            'status' => 'processing'
+            'type'       => $data['type'] ?? 'auto',
+            'status'     => 'processing',
         ]);
 
         $result = app(AIService::class)->generateDiagram(

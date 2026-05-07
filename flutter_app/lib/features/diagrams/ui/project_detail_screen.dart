@@ -3,13 +3,12 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/network/api_exception.dart';
-import '../../projects/ui/projects_model.dart';
+import '../../projects/data/projects_model.dart';
 import '../data/diagram_model.dart';
 import '../data/diagram_repository.dart';
 import 'widgets/diagram_card.dart';
 import 'create_diagram_screen.dart';
 import 'diagram_viewer_screen.dart';
-
 
 class ProjectDetailScreen extends StatefulWidget {
   final ProjectModel project;
@@ -41,21 +40,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       _isLoading = true;
       _error = null;
     });
-    try {
-      final diagrams = await _repo.getDiagrams(widget.project.id);
+
+    final result = await _repo.getDiagrams(widget.project.id);
+
+    if (result['success']) {
       setState(() {
-        _diagrams = diagrams;
+        _diagrams = List<Diagram>.from(result['data']);
         _filterDiagrams();
         _isLoading = false;
       });
-    } on ApiException catch (e) {
+    } else {
       setState(() {
-        _error = e.message;
+        _error = result['message'];
         _isLoading = false;
       });
     }
   }
-
 
   void _filterDiagrams() {
     setState(() {
@@ -293,28 +293,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             style: TextStyle(
               fontSize: AppSizes.fontMd,
               color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSizes.xl),
-          ElevatedButton.icon(
-            onPressed: _goToCreateDiagram,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.lg,
-                vertical: AppSizes.md,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-              ),
-            ),
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              'New diagram',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
             ),
           ),
         ],

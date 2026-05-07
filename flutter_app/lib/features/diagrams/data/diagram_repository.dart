@@ -4,10 +4,46 @@ import '../data/diagram_model.dart';
 class DiagramRepository {
   final _client = ApiClient();
 
-  Future<List<Diagram>> getDiagrams(int projectId) async {
-    final response = await _client.get('/projects/$projectId/diagrams');
-    final List data = response['data'] ?? [];
-    return data.map((e) => Diagram.fromJson(e)).toList();
+  Future<Map<String, dynamic>> getDiagrams(int projectId) async {
+    try {
+      final response = await _client.get('/projects/$projectId/diagrams');
+
+      List data = [];
+      if (response is List) {
+        data = response;
+      } else if (response is Map) {
+        final d = response['data'];
+        if (d is List) {
+          data = d;
+        } else if (d is Map) {
+          data = [d];
+        }
+      }
+
+      return {
+        'success': true,
+        'data': data
+            .map((e) => Diagram.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> getRecentDiagrams() async {
+    try {
+      final response = await _client.get('/diagrams/recent');
+      List data = response is List ? response : response['data'] ?? [];
+      return {
+        'success': true,
+        'data': data
+            .map((e) => Diagram.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
   }
 
   Future<Diagram> generateDiagram({
@@ -16,20 +52,29 @@ class DiagramRepository {
     required String description,
     required String type,
   }) async {
-    final response = await _client.post(
-      '/diagrams/generate',
-      data: {
-        'project_id': projectId,
-        'name': name,
-        'input_text': description,
-        'type': type,
-      },
-    );
-    return Diagram.fromJson(response['data'] ?? response);
+    try {
+      print('GENERATING: projectId=$projectId, name=$name, type=$type');
+      final response = await _client.post(
+        '/diagrams/generate',
+        data: {
+          'project_id': projectId,
+          'name': name,
+          'input_text': description,
+          'type': type,
+        },
+      );
+      print('GENERATE RESPONSE: $response');
+      final data = response is Map ? (response['data'] ?? response) : response;
+      return Diagram.fromJson(Map<String, dynamic>.from(data));
+    } catch (e) {
+      print('GENERATE ERROR: $e');
+      rethrow;
+    }
   }
 
   Future<Diagram> getDiagram(int id) async {
     final response = await _client.get('/diagrams/$id');
-    return Diagram.fromJson(response['data'] ?? response);
+    final data = response is Map ? (response['data'] ?? response) : response;
+    return Diagram.fromJson(Map<String, dynamic>.from(data));
   }
 }

@@ -8,14 +8,18 @@ class AIService
 {
     public function generateDiagram($text, $type = 'auto')
     {
-        $response = Http::post('http://127.0.0.1:8001/generator', [
+        $response = Http::post('http://127.0.0.1:8001/api/generate', [
             'text' => $text,
-            'type' => $type,
+            'type' => $type ?? 'class',
+            'mode' => 'generate', 
         ]);
 
-        dd($response->json());
+        dd([
+            'status' => $response->status(),
+            'body' => $response->body(),
+        ]);
     }
-    
+
     // TEST
     // public function generateDiagram($text, $type = 'auto')
     // {

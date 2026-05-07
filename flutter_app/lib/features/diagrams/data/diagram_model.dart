@@ -33,13 +33,13 @@ class Diagram {
 
   factory Diagram.fromJson(Map<String, dynamic> json) {
     return Diagram(
-      id: json['id'],
-      projectId: json['project_id'],
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      projectId: int.tryParse(json['project_id'].toString()) ?? 0,
       name: json['name'] ?? '',
-      inputText: json['input_text'],
+      inputText: json['input_text'] ?? '',
       diagramCode: json['diagram_code'],
-      type: json['type'],
-      status: json['status'],
+      type: json['type'] ?? 'auto',
+      status: json['status'] ?? 'pending',
       createdAt: DateTime.parse(json['created_at']),
     );
   }

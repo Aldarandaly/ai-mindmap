@@ -35,12 +35,28 @@ class DiagramController extends Controller
     {
         $request->validate([
             'project_id' => 'required|exists:projects,id',
+            'name'       => 'nullable|string|max:255',
             'input_text' => 'required|string',
-            'type' => 'nullable|in:class,erd,mindmap,auto',
+            'type'       => 'nullable|in:class,erd,mindmap,auto',
         ]);
 
         $diagram = $this->diagramService->generate($request->all(), $request->user());
 
         return response()->json($diagram, 201);
+    }
+
+    public function recent(Request $request)
+    {
+        $diagrams = $request->user()
+            ->projects()
+            ->with('diagrams')
+            ->get()
+            ->pluck('diagrams')
+            ->flatten()
+            ->sortByDesc('created_at')
+            ->take(20)
+            ->values();
+
+        return response()->json($diagrams);
     }
 }

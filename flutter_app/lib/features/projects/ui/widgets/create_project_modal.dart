@@ -5,7 +5,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../data/project_repository.dart';
-import '../projects_model.dart';
+import '../../data/projects_model.dart';
 
 class CreateProjectModal extends StatefulWidget {
   final void Function(ProjectModel) onCreated;

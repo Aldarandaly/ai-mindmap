@@ -5,7 +5,7 @@ import '../data/diagram_repository.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_sizes.dart';
-import '../../projects/ui/projects_model.dart';
+import '../../projects/data/projects_model.dart';
 
 class _DiagramType {
   final String key;
@@ -20,7 +20,6 @@ class _DiagramType {
     required this.description,
   });
 }
-// ─── Screen ───────────────────────────────────────────────────────────────────
 
 class CreateDiagramScreen extends StatefulWidget {
   final ProjectModel project;
@@ -57,13 +56,13 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       key: 'auto',
       label: 'Auto',
       icon: Icons.auto_awesome_rounded,
-      description: 'بيختار النوع الأنسب تلقائياً',
+      description: 'Picks the best type automatically',
     ),
     _DiagramType(
       key: 'class',
       label: 'Class',
       icon: Icons.account_tree_rounded,
-      description: 'Class Diagram للـ OOP',
+      description: 'Class Diagram for OOP',
     ),
     _DiagramType(
       key: 'erd',
@@ -75,7 +74,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       key: 'mindmap',
       label: 'Mind Map',
       icon: Icons.hub_rounded,
-      description: 'خريطة ذهنية للأفكار',
+      description: 'Visual mind map for ideas',
     ),
   ];
 
@@ -133,7 +132,8 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     } catch (e) {
       setState(() {
         _isGenerating = false;
-        _errorMessage = 'فشل إرسال الطلب. تأكد من الاتصال وحاول تاني.';
+        _errorMessage =
+            'Failed to send request. Check your connection and try again.';
       });
     }
   }
@@ -147,7 +147,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         _stopPolling();
         setState(() {
           _isGenerating = false;
-          _errorMessage = 'استغرق التوليد وقتاً طويلاً. حاول مرة تانية.';
+          _errorMessage = 'Generation took too long. Please try again.';
         });
         return;
       }
@@ -163,7 +163,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           _stopPolling();
           setState(() {
             _isGenerating = false;
-            _errorMessage = 'فشل توليد الـ diagram. حاول مرة تانية.';
+            _errorMessage = 'Failed to generate diagram. Please try again.';
           });
         }
       } catch (_) {}
@@ -204,7 +204,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         color: AppColors.textPrimary,
         onPressed: _isGenerating ? null : () => Navigator.of(context).pop(),
       ),
-      title: Text('Diagram جديد', style: AppTextStyles.h3),
+      title: Text('New Diagram', style: AppTextStyles.h3),
       centerTitle: true,
     );
   }
@@ -222,22 +222,22 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
               const SizedBox(height: AppSizes.md),
             ],
 
-            Text('نوع الـ Diagram', style: AppTextStyles.labelSmall),
+            Text('Diagram Type', style: AppTextStyles.labelSmall),
             const SizedBox(height: AppSizes.sm),
             _buildTypeSelector(),
             const SizedBox(height: AppSizes.lg),
 
-            Text('اسم الـ Diagram', style: AppTextStyles.labelSmall),
+            Text('Diagram Name', style: AppTextStyles.labelSmall),
             const SizedBox(height: AppSizes.xs),
             TextFormField(
               controller: _nameController,
               style: const TextStyle(color: AppColors.textPrimary),
               decoration: _inputDecoration(
-                hint: 'مثلاً: User Authentication System',
+                hint: 'e.g. User Authentication System',
                 icon: Icons.label_outline_rounded,
               ),
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'اكتب اسم للـ diagram'
+                  ? 'Enter a diagram name'
                   : null,
             ),
             const SizedBox(height: AppSizes.md),
@@ -245,7 +245,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('الوصف', style: AppTextStyles.labelSmall),
+                Text('Description', style: AppTextStyles.labelSmall),
                 Text(
                   '$_descLength / 1000',
                   style: AppTextStyles.labelSmall.copyWith(
@@ -271,11 +271,11 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                   }) => const SizedBox.shrink(),
               decoration: _inputDecoration(
                 hint:
-                    'اوصف الـ system أو الفكرة اللي عايز تحولها لـ diagram...',
+                    'Describe the system or idea you want to turn into a diagram...',
                 icon: Icons.notes_rounded,
               ),
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'اكتب وصف للـ diagram'
+                  ? 'Enter a description'
                   : null,
             ),
             const SizedBox(height: AppSizes.xl),
@@ -371,7 +371,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                       ),
                       Text(
                         t.description,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.textTertiary,
                           fontSize: AppSizes.fontXs,
                         ),
@@ -421,14 +421,14 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             AnimatedBuilder(
               animation: _dotsAnimation,
               builder: (_, __) => Text(
-                'جاري التوليد${'.' * _dotsAnimation.value}',
+                'Generating${'.' * _dotsAnimation.value}',
                 style: AppTextStyles.h3,
               ),
             ),
             const SizedBox(height: AppSizes.sm),
 
             Text(
-              'الـ AI بيحلل النص ويولد الـ diagram\nده ممكن ياخد لحد 30 ثانية',
+              'AI is analyzing your text and building the diagram\nThis may take up to 30 seconds',
               textAlign: TextAlign.center,
               style: AppTextStyles.labelSmall.copyWith(height: 1.6),
             ),
@@ -437,7 +437,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             AnimatedBuilder(
               animation: _dotsController,
               builder: (_, __) => Text(
-                'محاولة $_pollingCount / $_maxPollingAttempts',
+                'Attempt $_pollingCount / $_maxPollingAttempts',
                 style: const TextStyle(
                   color: AppColors.textTertiary,
                   fontSize: AppSizes.fontXs,
@@ -461,7 +461,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.textTertiary,
               ),
-              child: const Text('إلغاء'),
+              child: const Text('Cancel'),
             ),
           ],
         ),

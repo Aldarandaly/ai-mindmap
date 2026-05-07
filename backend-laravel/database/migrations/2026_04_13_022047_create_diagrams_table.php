@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('diagrams', function (Blueprint $table) {
             $table->id();
             $table->foreignId('project_id')->constrained()->cascadeOnDelete();
+            $table->string('name');
             $table->text('input_text');
             $table->text('diagram_code')->nullable();
             $table->enum('type', ['class', 'erd', 'mindmap', 'auto'])->default('auto');

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import '../data/diagram_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -16,137 +15,22 @@ class DiagramViewerScreen extends StatefulWidget {
 }
 
 class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
-  late final WebViewController _webController;
-  bool _isLoading = true;
-  bool _hasError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initWebView();
-  }
-
-  void _initWebView() {
-    _webController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(AppColors.background)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageFinished: (_) => setState(() => _isLoading = false),
-        onWebResourceError: (_) => setState(() {
-          _isLoading = false;
-          _hasError = true;
-        }),
-      ))
-      ..loadHtmlString(_buildHtml(widget.diagram.diagramCode ?? ''));
-  }
-
-  String _buildHtml(String mermaidCode) {
-    // Escape backticks and backslashes عشان متكسرش الـ JS template literal
-    final escaped = mermaidCode
-        .replaceAll(r'\', r'\\')
-        .replaceAll('`', r'\`')
-        .replaceAll('\$', r'\$');
-
-    return '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      background: #0F0E17;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-    }
-    .mermaid {
-      max-width: 100%;
-      overflow: auto;
-    }
-    .mermaid svg {
-      max-width: 100%;
-      height: auto;
-    }
-    #error {
-      display: none;
-      color: #ef4444;
-      font-family: sans-serif;
-      font-size: 14px;
-      text-align: center;
-      padding: 24px;
-    }
-  </style>
-</head>
-<body>
-  <div class="mermaid" id="diagram">${mermaidCode.replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</div>
-  <div id="error">فشل عرض الـ diagram. الكود قد يكون غير صحيح.</div>
-
-  <script>
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'dark',
-      themeVariables: {
-        background: '#0F0E17',
-        primaryColor: '#4F46E5',
-        primaryTextColor: '#ffffff',
-        primaryBorderColor: '#2D2B3D',
-        lineColor: '#6366f1',
-        secondaryColor: '#1A1828',
-        tertiaryColor: '#1A1828',
-        edgeLabelBackground: '#1A1828',
-        clusterBkg: '#1A1828',
-        titleColor: '#ffffff',
-        nodeTextColor: '#ffffff',
-        attributeBackgroundColorOdd: '#1A1828',
-        attributeBackgroundColorEven: '#0F0E17',
-      },
-      flowchart: { curve: 'basis', htmlLabels: true },
-      er: { diagramPadding: 20 },
-      mindmap: { padding: 16 },
-    });
-
-    async function renderDiagram() {
-      try {
-        const el = document.getElementById('diagram');
-        const code = el.innerText.trim();
-        const { svg } = await mermaid.render('mermaid-svg', code);
-        el.innerHTML = svg;
-      } catch (e) {
-        document.getElementById('diagram').style.display = 'none';
-        document.getElementById('error').style.display = 'block';
-        console.error('Mermaid error:', e);
-      }
-    }
-
-    renderDiagram();
-  </script>
-</body>
-</html>
-''';
-  }
+  bool _showCode = false;
 
   void _copyCode() {
     final code = widget.diagram.diagramCode ?? '';
     Clipboard.setData(ClipboardData(text: code));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('تم نسخ الكود'),
+        content: const Text('Code copied to clipboard'),
         backgroundColor: AppColors.surface,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        ),
         duration: const Duration(seconds: 2),
       ),
     );
-  }
-
-  void _reload() {
-    setState(() { _isLoading = true; _hasError = false; });
-    _webController.loadHtmlString(_buildHtml(widget.diagram.diagramCode ?? ''));
   }
 
   @override
@@ -154,19 +38,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          // ── WebView ──
-          if (!_hasError)
-            WebViewWidget(controller: _webController),
-
-          // ── Error State ──
-          if (_hasError) _buildErrorState(),
-
-          // ── Loading Overlay ──
-          if (_isLoading) _buildLoadingOverlay(),
-        ],
-      ),
+      body: _buildBody(),
     );
   }
 
@@ -184,7 +56,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.diagram.name ?? 'Untitled',
+            widget.diagram.name.isNotEmpty ? widget.diagram.name : 'Untitled',
             style: AppTextStyles.h3,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -196,84 +68,267 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
         ],
       ),
       actions: [
-        // Copy Code Button
         IconButton(
           icon: const Icon(Icons.copy_rounded, size: 20),
           color: AppColors.textSecondary,
-          tooltip: 'نسخ الكود',
+          tooltip: 'Copy code',
           onPressed: widget.diagram.diagramCode != null ? _copyCode : null,
         ),
-        // Reload Button
         IconButton(
-          icon: const Icon(Icons.refresh_rounded, size: 20),
+          icon: Icon(
+            _showCode ? Icons.visibility_rounded : Icons.code_rounded,
+            size: 20,
+          ),
           color: AppColors.textSecondary,
-          tooltip: 'إعادة تحميل',
-          onPressed: _reload,
+          tooltip: _showCode ? 'Hide code' : 'Show code',
+          onPressed: () => setState(() => _showCode = !_showCode),
         ),
         const SizedBox(width: AppSizes.xs),
       ],
     );
   }
 
-  Widget _buildLoadingOverlay() {
-    return Container(
-      color: AppColors.background,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 40,
-              height: 40,
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-                strokeWidth: 2.5,
-              ),
-            ),
-            const SizedBox(height: AppSizes.md),
-            Text('جاري تحميل الـ diagram...', style: AppTextStyles.labelSmall),
-          ],
-        ),
+  Widget _buildBody() {
+    if (widget.diagram.diagramCode == null || widget.diagram.diagramCode!.isEmpty) {
+      return _buildNoCode();
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSizes.screenPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Status Banner ──
+          _buildStatusBanner(),
+          const SizedBox(height: AppSizes.md),
+
+          // ── Toggle ──
+          Row(
+            children: [
+              _buildToggleChip('Preview', !_showCode),
+              const SizedBox(width: AppSizes.sm),
+              _buildToggleChip('Code', _showCode),
+            ],
+          ),
+          const SizedBox(height: AppSizes.md),
+
+          // ── Content ──
+          _showCode ? _buildCodeView() : _buildPreviewInfo(),
+        ],
       ),
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildStatusBanner() {
+    final isDone = widget.diagram.isDone;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
+      decoration: BoxDecoration(
+        color: isDone
+            ? AppColors.success.withValues(alpha: 0.1)
+            : AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        border: Border.all(
+          color: isDone
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.warning.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isDone ? Icons.check_circle_rounded : Icons.hourglass_top_rounded,
+            size: 16,
+            color: isDone ? AppColors.success : AppColors.warning,
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Text(
+            isDone ? 'Diagram generated successfully' : 'Status: ${widget.diagram.status}',
+            style: TextStyle(
+              fontSize: AppSizes.fontSm,
+              color: isDone ? AppColors.success : AppColors.warning,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewInfo() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              size: 32,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+          Text(
+            'Diagram Ready',
+            style: AppTextStyles.h3,
+          ),
+          const SizedBox(height: AppSizes.xs),
+          const Text(
+            'WebView preview is available on mobile devices.\nTap "Code" to view the Mermaid code.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: AppSizes.fontSm,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSizes.lg),
+          ElevatedButton.icon(
+            onPressed: () => setState(() => _showCode = true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              ),
+            ),
+            icon: const Icon(Icons.code_rounded, size: 18),
+            label: const Text('View Mermaid Code'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCodeView() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Mermaid Code',
+                style: TextStyle(
+                  fontSize: AppSizes.fontSm,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              GestureDetector(
+                onTap: _copyCode,
+                child: const Row(
+                  children: [
+                    Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
+                    SizedBox(width: 4),
+                    Text(
+                      'Copy',
+                      style: TextStyle(
+                        fontSize: AppSizes.fontSm,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          const Divider(color: AppColors.border),
+          const SizedBox(height: AppSizes.sm),
+          SelectableText(
+            widget.diagram.diagramCode ?? '',
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontFamily: 'monospace',
+              fontSize: 13,
+              height: 1.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoCode() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.screenPadding),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72, height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-              ),
-              child: const Icon(Icons.broken_image_rounded, size: 36, color: AppColors.textTertiary),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppSizes.radiusXl),
             ),
-            const SizedBox(height: AppSizes.lg),
-            Text('فشل تحميل الـ diagram', style: AppTextStyles.h3),
-            const SizedBox(height: AppSizes.xs),
-            Text(
-              'في مشكلة في عرض الـ diagram.\nحاول تعمل reload.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.labelSmall.copyWith(height: 1.6),
+            child: const Icon(
+              Icons.hourglass_empty_rounded,
+              size: 36,
+              color: AppColors.textTertiary,
             ),
-            const SizedBox(height: AppSizes.xl),
-            ElevatedButton.icon(
-              onPressed: _reload,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-                padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.md),
-              ),
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Reload'),
+          ),
+          const SizedBox(height: AppSizes.lg),
+          Text('No diagram yet', style: AppTextStyles.h3),
+          const SizedBox(height: AppSizes.xs),
+          const Text(
+            'The diagram is still being generated.',
+            style: TextStyle(
+              fontSize: AppSizes.fontMd,
+              color: AppColors.textSecondary,
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleChip(String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () => setState(() => _showCode = label == 'Code'),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.md,
+          vertical: AppSizes.xs,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: AppSizes.fontSm,
+            fontWeight: FontWeight.w500,
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+          ),
         ),
       ),
     );

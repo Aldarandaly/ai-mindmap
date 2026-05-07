@@ -18,10 +18,10 @@ class ProjectModel {
   // ─── From Laravel API response ───────────────────────────
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
     return ProjectModel(
-      id: json['id'] as int,
+      id: int.tryParse(json['id'].toString()) ?? 0,
       name: json['name'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      diagramsCount: json['diagrams_count'] as int? ?? 0,
+      diagramsCount: int.tryParse(json['diagrams_count'].toString()) ?? 0,
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'] as String)
           : null,
@@ -32,13 +32,13 @@ class ProjectModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'diagrams_count': diagramsCount,
-        'updated_at': updatedAt?.toIso8601String(),
-        'created_at': createdAt?.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'diagrams_count': diagramsCount,
+    'updated_at': updatedAt?.toIso8601String(),
+    'created_at': createdAt?.toIso8601String(),
+  };
 
   // ─── Helpers ─────────────────────────────────────────────
 
