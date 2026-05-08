@@ -6,7 +6,6 @@ import '../../diagrams/data/diagram_model.dart';
 import '../../diagrams/data/diagram_repository.dart';
 import '../../diagrams/ui/diagram_viewer_screen.dart';
 import '../../diagrams/ui/widgets/diagram_card.dart';
-import 'dart:developer';
 
 class RecentScreen extends StatefulWidget {
   const RecentScreen({super.key});
@@ -24,17 +23,19 @@ class _RecentScreenState extends State<RecentScreen> {
   @override
   void initState() {
     super.initState();
+    print('RecentScreen initState called');
     _loadRecent();
   }
 
   Future<void> _loadRecent() async {
+    print('_loadRecent called');
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     final result = await _repo.getRecentDiagrams();
-    debugger(); 
+    print('RESULT: $result');
 
     if (result['success']) {
       setState(() {
@@ -42,7 +43,6 @@ class _RecentScreenState extends State<RecentScreen> {
         _isLoading = false;
       });
     } else {
-      debugger(); 
       setState(() {
         _error = result['message'];
         _isLoading = false;

@@ -10,15 +10,15 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-
-  # HTTP
-  dio: ^5.4.0
-
-  # Secure token storage
-  flutter_secure_storage: ^9.0.0
-
-  # WebView (Mermaid.js)
   webview_flutter: ^4.7.0
+  dio: ^5.4.0
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.3.0
+  screenshot: ^3.0.0
+  path_provider: ^2.1.2
+  share_plus: ^10.0.0
+  printing: ^5.13.1
+  pdf: ^3.10.8
 
 dev_dependencies:
   flutter_test:

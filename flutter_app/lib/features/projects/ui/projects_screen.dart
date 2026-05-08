@@ -198,8 +198,7 @@ class _ProjectsBodyState extends State<ProjectsBody> {
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: "Search projects...",
-                    hintStyle:
-                        TextStyle(color: Colors.white.withOpacity(.35)),
+                    hintStyle: TextStyle(color: Colors.white.withOpacity(.35)),
                     prefixIcon: Icon(
                       Icons.search_rounded,
                       color: Colors.white.withOpacity(.4),
@@ -220,115 +219,107 @@ class _ProjectsBodyState extends State<ProjectsBody> {
                       ),
                     )
                   : _error != null
-                      ? _buildError()
-                      : _filtered.isEmpty
-                          ? _buildEmpty()
-                          : RefreshIndicator(
-                              onRefresh: _loadProjects,
-                              color: const Color(0xFF5B4DFF),
-                              child: ListView.builder(
-                                padding: EdgeInsets.only(
-                                  left: 20,
-                                  right: 20,
-                                  bottom:
-                                      MediaQuery.of(context).padding.bottom +
-                                          120,
-                                ),
-                                itemCount: _filtered.length, // ✅ اتشالت الزيادة
-                                itemBuilder: (_, i) {
-                                  final project = _filtered[i];
+                  ? _buildError()
+                  : _filtered.isEmpty
+                  ? _buildEmpty()
+                  : RefreshIndicator(
+                      onRefresh: _loadProjects,
+                      color: const Color(0xFF5B4DFF),
+                      child: ListView.builder(
+                        padding: EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          bottom: MediaQuery.of(context).padding.bottom + 120,
+                        ),
+                        itemCount: _filtered.length,
+                        itemBuilder: (_, i) {
+                          final project = _filtered[i];
 
-                                  return GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              ProjectDetailScreen(
-                                                  project: project),
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      margin:
-                                          const EdgeInsets.only(bottom: 16),
-                                      padding: const EdgeInsets.all(18),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1A1A1A),
-                                        borderRadius:
-                                            BorderRadius.circular(24),
-                                        border: Border.all(
-                                          color:
-                                              Colors.white.withOpacity(.05),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  project.name,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 20,
-                                                    fontWeight:
-                                                        FontWeight.w700,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Text(
-                                                  project.description,
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: TextStyle(
-                                                    color: Colors.white
-                                                        .withOpacity(.55),
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 10),
-                                                Text(
-                                                  "Updated recently",
-                                                  style: TextStyle(
-                                                    color: Colors.white
-                                                        .withOpacity(.3),
-                                                    fontSize: 12,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ProjectDetailScreen(project: project),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1A1A1A),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(.05),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          project.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w700,
                                           ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6,
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          project.description,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              .55,
                                             ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFF5B4DFF)
-                                                  .withOpacity(.15),
-                                              borderRadius:
-                                                  BorderRadius.circular(30),
-                                            ),
-                                            child: const Text(
-                                              "0 diagrams",
-                                              style: TextStyle(
-                                                color: Color(0xFF8C7BFF),
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 12,
-                                              ),
-                                            ),
+                                            fontSize: 14,
                                           ),
-                                        ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          "Updated recently",
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(.3),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF5B4DFF,
+                                      ).withOpacity(.15),
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    child: Text(
+                                      "${project.diagramsCount} diagram${project.diagramsCount == 1 ? '' : 's'}",
+                                      style: const TextStyle(
+                                        color: Color(0xFF8C7BFF),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
                                       ),
                                     ),
-                                  );
-                                },
+                                  ),
+                                ],
                               ),
                             ),
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),

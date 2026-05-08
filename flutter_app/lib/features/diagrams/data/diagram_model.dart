@@ -19,7 +19,7 @@ class Diagram {
     required this.createdAt,
   });
 
-  bool get isDone => status == 'done';
+  bool get isDone => status == 'done' || status == 'completed';
   bool get isFailed => status == 'failed';
 
   String get createdAtLabel {

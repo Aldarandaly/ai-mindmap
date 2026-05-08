@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'features/auth/ui/login_screen.dart';
+import 'features/main/ui/main.screen.dart';
 import 'core/constants/app_colors.dart';
+import 'core/network/api_client.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final hasToken = await ApiClient().hasToken();
+  runApp(MyApp(isLoggedIn: hasToken));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isLoggedIn;
+  const MyApp({super.key, required this.isLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +39,7 @@ class MyApp extends StatelessWidget {
           unselectedItemColor: AppColors.textTertiary,
         ),
       ),
-      home: const LoginScreen(),
+      home: isLoggedIn ? MainScreen() : const LoginScreen(),
     );
   }
 }

@@ -82,6 +82,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         _diagrams.insert(0, result);
         _filterDiagrams();
       });
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DiagramViewerScreen(diagram: result),
+          ),
+        );
+      }
     }
   }
 

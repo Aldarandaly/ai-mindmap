@@ -34,6 +34,7 @@ class DiagramRepository {
   Future<Map<String, dynamic>> getRecentDiagrams() async {
     try {
       final response = await _client.get('/diagrams/recent');
+      print('RECENT RESPONSE: $response');
       List data = response is List ? response : response['data'] ?? [];
       return {
         'success': true,
@@ -42,6 +43,7 @@ class DiagramRepository {
             .toList(),
       };
     } catch (e) {
+      print('RECENT ERROR: $e');
       return {'success': false, 'message': e.toString()};
     }
   }
@@ -74,6 +76,7 @@ class DiagramRepository {
 
   Future<Diagram> getDiagram(int id) async {
     final response = await _client.get('/diagrams/$id');
+    print('GET DIAGRAM RESPONSE: $response');
     final data = response is Map ? (response['data'] ?? response) : response;
     return Diagram.fromJson(Map<String, dynamic>.from(data));
   }

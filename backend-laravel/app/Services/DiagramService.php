@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use App\Jobs\GenerateDiagramJob;
 use App\Models\Diagram;
 use App\Models\Project;
@@ -26,31 +27,39 @@ class DiagramService
         return $diagram;
     }
 
-    public function generate($data, $user)
-    {
-        $project = Project::findOrFail($data['project_id']);
+   public function generate($data, $user)
+{
+    $project = Project::findOrFail($data['project_id']);
 
-        if ($project->user_id !== $user->id) {
-            abort(403);
-        }
+    if ($project->user_id !== $user->id) {
+        abort(403);
+    }
 
-        $diagram = $project->diagrams()->create([
-            'name'       => $data['name'] ?? 'Untitled',
-            'input_text' => $data['input_text'],
-            'type'       => $data['type'] ?? 'auto',
-            'status'     => 'processing',
-        ]);
+    $diagram = $project->diagrams()->create([
+        'name'       => $data['name'] ?? 'Untitled',
+        'input_text' => $data['input_text'],
+        'type'       => $data['type'] ?? 'auto',
+        'status'     => 'processing',
+    ]);
 
+    try {
         $result = app(AIService::class)->generateDiagram(
             $data['input_text'],
             $data['type'] ?? 'auto'
         );
 
+        Log::info('AI Result:', $result);  
+
         $diagram->update([
             'diagram_code' => $result['diagram_code'],
-            'status' => 'done'
+            'type'         => $result['type'] ?? $data['type'],
+            'status'       => 'done',
         ]);
-
-        return $diagram;
+    } catch (\Exception $e) {
+        Log::error('AI Error: ' . $e->getMessage());  
+        $diagram->update(['status' => 'failed']);
     }
+
+    return $diagram;
+}
 }

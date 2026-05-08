@@ -19,7 +19,7 @@ class GenerateRequest(BaseModel):
             raise ValueError("Text is too long, maximum 5000 characters")
 
         return v.strip()
-
+ 
 
 class GenerateResponse(BaseModel):
     diagram_code: str

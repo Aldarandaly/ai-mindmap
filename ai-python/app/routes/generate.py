@@ -53,6 +53,7 @@ async def generate_diagram(request: Request, body: GenerateRequest):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"REAL ERROR: {type(e).__name__}: {str(e)}")
         handle_error(e)
 
 

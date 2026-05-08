@@ -3,7 +3,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/network/api_client.dart';
 import '../../auth/ui/login_screen.dart';
-import 'dart:developer';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -28,7 +27,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadProfile() async {
     try {
       final response = await _client.get('/user');
-      debugger();
       setState(() {
         _name = response['name'] ?? '';
         _email = response['email'] ?? '';
@@ -36,7 +34,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      debugger();
+      print('SETTINGS ERROR: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -60,36 +58,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSizes.screenPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSizes.sm),
-              const Text(
-                'Settings',
-                style: TextStyle(
-                  fontSize: AppSizes.fontXxl,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSizes.screenPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: AppSizes.sm),
+                    const Text(
+                      'Settings',
+                      style: TextStyle(
+                        fontSize: AppSizes.fontXxl,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.xl),
+                    _isLoading ? _buildLoadingCard() : _buildProfileCard(),
+                    const SizedBox(height: AppSizes.lg),
+                    if (!_isLoading) _buildStatsCard(),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppSizes.xl),
-
-              // ── Profile Card ──
-              _isLoading ? _buildLoadingCard() : _buildProfileCard(),
-
-              const SizedBox(height: AppSizes.lg),
-
-              // ── Stats ──
-              if (!_isLoading) _buildStatsCard(),
-
-              const SizedBox(height: AppSizes.lg),
-
-              // ── Logout ──
-              _buildLogoutButton(),
-            ],
-          ),
+            ),
+            // ── Logout دايماً في الأسفل ──
+            Padding(
+              padding: const EdgeInsets.all(AppSizes.screenPadding),
+              child: _buildLogoutButton(),
+            ),
+          ],
         ),
       ),
     );
@@ -140,7 +139,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: Row(
         children: [
-          // Avatar
           Container(
             width: 56,
             height: 56,
@@ -160,7 +158,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(width: AppSizes.md),
-          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

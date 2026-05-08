@@ -139,36 +139,34 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   }
 
   void _startPolling() {
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
-      if (_pendingDiagramId == null) return;
-      _pollingCount++;
+  _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) async {
+    if (_pendingDiagramId == null) return;
+    _pollingCount++;
 
-      if (_pollingCount > _maxPollingAttempts) {
+    if (_pollingCount > _maxPollingAttempts) {
+      _stopPolling();
+      setState(() {
+        _isGenerating = false;
+        _errorMessage = 'Generation took too long. Please try again.';
+      });
+      return;
+    }
+
+    try {
+      final diagram = await DiagramRepository().getDiagram(_pendingDiagramId!);
+      if (diagram.status == 'done' || diagram.status == 'completed' || diagram.isDone) {
+        _stopPolling();
+        if (mounted) Navigator.of(context).pop(diagram);
+      } else if (diagram.status == 'failed' || diagram.isFailed) {
         _stopPolling();
         setState(() {
           _isGenerating = false;
-          _errorMessage = 'Generation took too long. Please try again.';
+          _errorMessage = 'Failed to generate diagram. Please try again.';
         });
-        return;
       }
-
-      try {
-        final diagram = await DiagramRepository().getDiagram(
-          _pendingDiagramId!,
-        );
-        if (diagram.isDone) {
-          _stopPolling();
-          if (mounted) Navigator.of(context).pop(diagram);
-        } else if (diagram.isFailed) {
-          _stopPolling();
-          setState(() {
-            _isGenerating = false;
-            _errorMessage = 'Failed to generate diagram. Please try again.';
-          });
-        }
-      } catch (_) {}
-    });
-  }
+    } catch (_) {}
+  });
+}
 
   void _stopPolling() {
     _pollingTimer?.cancel();

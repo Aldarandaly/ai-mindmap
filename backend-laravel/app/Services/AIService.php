@@ -8,25 +8,16 @@ class AIService
 {
     public function generateDiagram($text, $type = 'auto')
     {
-        $response = Http::post('http://127.0.0.1:8001/api/generate', [
+        $response = Http::post('http://127.0.0.1:8003/api/generate', [
             'text' => $text,
-            'type' => $type ?? 'class',
-            'mode' => 'generate', 
+            'type' => $type ?? 'auto',
+            'mode' => 'generate',
         ]);
 
-        dd([
-            'status' => $response->status(),
-            'body' => $response->body(),
-        ]);
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        throw new \Exception('AI service error: ' . $response->body());
     }
-
-    // TEST
-    // public function generateDiagram($text, $type = 'auto')
-    // {
-    //     // MOCK RESPONSE
-    //     return [
-    //         "diagram_code" => "classDiagram\nUser --> Project\nProject --> Diagram",
-    //         "type" => $type
-    //     ];
-    // }
 }
