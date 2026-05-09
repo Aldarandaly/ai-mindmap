@@ -8,6 +8,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import '../data/diagram_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_text_styles.dart';
@@ -28,6 +29,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
   WebViewController? _webController;
   bool _webViewLoading = true;
   final _screenshotController = ScreenshotController();
+  Uint8List? _capturedImage;
 
   @override
   void initState() {
@@ -44,7 +46,11 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(AppColors.background)
         ..setNavigationDelegate(NavigationDelegate(
-          onPageFinished: (_) => setState(() => _webViewLoading = false),
+          onPageFinished: (_) async {
+            setState(() => _webViewLoading = false);
+            await Future.delayed(const Duration(seconds: 2));
+            await _captureWebView();
+          },
         ))
         ..loadHtmlString(_buildHtml(widget.diagram.diagramCode ?? ''));
     } catch (e) {
@@ -52,10 +58,20 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
     }
   }
 
+  Future<void> _captureWebView() async {
+    try {
+      final image = await _screenshotController.capture(pixelRatio: 2.0);
+      if (mounted) setState(() => _capturedImage = image);
+    } catch (e) {
+      print('Capture error: $e');
+    }
+  }
+
   String _buildHtml(String mermaidCode) {
     final cleanCode = mermaidCode
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '')
         .split('\n')
-        .map((line) => line.trimLeft())
         .join('\n')
         .trim();
 
@@ -65,7 +81,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { background: #0F0E17; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
@@ -80,6 +96,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
   <script>
     mermaid.initialize({
       startOnLoad: false,
+      securityLevel: 'loose',
       theme: 'dark',
       themeVariables: {
         background: '#0F0E17',
@@ -96,15 +113,14 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
     async function renderDiagram() {
       try {
         const el = document.getElementById('diagram');
-        const { svg } = await mermaid.render('mermaid-svg', code);
-        el.innerHTML = svg;
+        el.classList.add('mermaid');
+        el.textContent = code;
+        await mermaid.run();
       } catch (e) {
-        document.getElementById('diagram').style.display = 'none';
         document.getElementById('error').style.display = 'block';
         document.getElementById('error').innerText = 'Error: ' + e.message;
       }
     }
-
     renderDiagram();
   </script>
 </body>
@@ -162,7 +178,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
             ListTile(
               leading: const Icon(Icons.code_rounded, color: AppColors.primary),
               title: const Text('Mermaid Code', style: TextStyle(color: AppColors.textPrimary)),
-              subtitle: const Text('Copy or share code', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              subtitle: const Text('Share code', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               onTap: () { Navigator.pop(context); _exportCode(); },
             ),
           ],
@@ -172,11 +188,13 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
   }
 
   Future<void> _exportPNG() async {
-    if (_webController == null) { _copyCode(); return; }
     setState(() => _isExporting = true);
     try {
-      final image = await _screenshotController.capture();
-      if (image == null) return;
+      Uint8List? image = _capturedImage;
+      image ??= await _screenshotController.capture(pixelRatio: 2.0);
+
+      if (image == null) throw Exception('Could not capture diagram');
+
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${widget.diagram.name}.png');
       await file.writeAsBytes(image);
@@ -193,19 +211,34 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
   }
 
   Future<void> _exportPDF() async {
-    if (_webController == null) { _copyCode(); return; }
     setState(() => _isExporting = true);
     try {
-      final image = await _screenshotController.capture();
-      if (image == null) return;
+      Uint8List? image = _capturedImage;
+      image ??= await _screenshotController.capture(pixelRatio: 2.0);
+
+      if (image == null) throw Exception('Could not capture diagram');
+
       final pdf = pw.Document();
       final pdfImage = pw.MemoryImage(image);
+
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
-          build: (pw.Context context) => pw.Center(child: pw.Image(pdfImage)),
+          margin: const pw.EdgeInsets.all(20),
+          build: (pw.Context context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                widget.diagram.name,
+                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Center(child: pw.Image(pdfImage)),
+            ],
+          ),
         ),
       );
+
       await Printing.sharePdf(
         bytes: await pdf.save(),
         filename: '${widget.diagram.name}.pdf',
@@ -294,9 +327,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
         ),
         const SizedBox(height: 12),
         // ── Content ──
-        Expanded(
-          child: _showCode ? _buildCodeView() : _buildPreview(),
-        ),
+        Expanded(child: _showCode ? _buildCodeView() : _buildPreview()),
       ],
     );
   }

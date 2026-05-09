@@ -15,18 +15,19 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   VoidCallback? _showCreateModal;
 
+  final _projectsKey = GlobalKey<State>();
+  final _recentKey = GlobalKey<State>();
+  final _settingsKey = GlobalKey<State>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          ProjectsBody(onRegisterShowModal: (fn) => _showCreateModal = fn),
-          RecentScreen(),
-          SettingsScreen(),
-        ],
-      ),
+      body: [
+        ProjectsBody(onRegisterShowModal: (fn) => _showCreateModal = fn),
+        RecentScreen(),
+        SettingsScreen(),
+      ][_currentIndex],
       floatingActionButton: _currentIndex == 0
           ? FloatingActionButton.extended(
               onPressed: () => _showCreateModal?.call(),
