@@ -6,6 +6,7 @@ from app.prompts.erd_prompt import get_erd_prompt
 from app.prompts.mindmap_prompt import get_mindmap_prompt
 from app.prompts.analyse_prompt import get_analyse_prompt
 from app.prompts.explain_prompt import get_explain_prompt
+from app.prompts.usecase_prompt import get_usecase_prompt
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -15,6 +16,8 @@ def get_prompt(text: str, diagram_type: str) -> str:
         return get_erd_prompt(text)
     elif diagram_type == "mindmap":
         return get_mindmap_prompt(text)
+    elif diagram_type == "usecase":
+        return get_usecase_prompt(text)
     else:
         return get_class_prompt(text)
 
