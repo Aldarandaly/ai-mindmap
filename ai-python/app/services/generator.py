@@ -26,25 +26,31 @@ def get_prompt(text: str, diagram_type: str) -> str:
     return get_class_prompt(text)
 
 
-def extract_mermaid(text: str) -> str:
+def extract_mermaid(text: str, diagram_type: str = "") -> str:
 
-    # mindmap
-    mindmap_match = re.search(r"(mindmap[\s\S]*)", text)
+    # لو عارف النوع استخدمه مباشرة
+    if diagram_type == "class":
+        class_match = re.search(r"(classDiagram[\s\S]*)", text)
+        if class_match:
+            return class_match.group(1).strip()
 
-    if mindmap_match:
-        return mindmap_match.group(1).strip()
+    if diagram_type == "erd":
+        erd_match = re.search(r"(erDiagram[\s\S]*)", text)
+        if erd_match:
+            return erd_match.group(1).strip()
 
-    # classDiagram
+    # auto detect
     class_match = re.search(r"(classDiagram[\s\S]*)", text)
-
     if class_match:
         return class_match.group(1).strip()
 
-    # erDiagram
     erd_match = re.search(r"(erDiagram[\s\S]*)", text)
-
     if erd_match:
         return erd_match.group(1).strip()
+
+    mindmap_match = re.search(r"(mindmap[\s\S]*)", text)
+    if mindmap_match:
+        return mindmap_match.group(1).strip()
 
     return text.strip()
 
@@ -237,11 +243,13 @@ def generate_mermaid(text: str, diagram_type: str) -> str:
             messages=[{"role": "user", "content": prompt}]
         )
         raw_code = response.choices[0].message.content.strip()
-        extracted = extract_mermaid(raw_code)
+        extracted = extract_mermaid(raw_code, diagram_type) 
         cleaned = clean_mermaid_code(extracted)
         return cleaned
     except Exception as e:
         print("Generate Mermaid Error:", e)
+        if diagram_type == "erd":
+            return "erDiagram\n    ENTITY {\n        int id PK\n    }"
         return "classDiagram\n    class System {\n        +init()\n    }"
 
 

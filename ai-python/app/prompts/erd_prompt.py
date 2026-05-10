@@ -5,10 +5,11 @@ Create a valid Mermaid.js ERD diagram. Output ONLY the Mermaid code, nothing els
 STRICT RULES:
 - Start with 'erDiagram'
 - Each attribute on its own line inside braces
-- Format: TYPE NAME
+- Format: TYPE NAME or TYPE NAME PK or TYPE NAME FK
 - Valid relationships: ||--||, ||--|{{, }}|--|{{, }}o--o{{
 - No commas inside attribute blocks
 - No explanations
+- No markdown
 
 CORRECT Example:
 erDiagram
