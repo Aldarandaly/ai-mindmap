@@ -8,6 +8,13 @@ from app.prompts.erd_prompt import get_erd_prompt
 from app.prompts.mindmap_prompt import get_mindmap_prompt
 from app.prompts.analyse_prompt import get_analyse_prompt
 from app.prompts.explain_prompt import get_explain_prompt
+from app.prompts.usecase_prompt import get_usecase_prompt
+from app.prompts.activity_prompt import get_activity_prompt
+from app.prompts.sequence_prompt import get_sequence_prompt
+from app.prompts.context_prompt import get_context_prompt
+from app.prompts.state_prompt import get_state_prompt
+from app.prompts.dfd_prompt import get_dfd_prompt
+from app.prompts.gantt_prompt import get_gantt_prompt
 
 load_dotenv()
 
@@ -22,106 +29,6 @@ def get_prompt(text: str, diagram_type: str) -> str:
 
     elif diagram_type == "mindmap":
         return get_mindmap_prompt(text)
-
-    return get_class_prompt(text)
-
-
-def extract_mermaid(text: str, diagram_type: str = "") -> str:
-
-    # لو عارف النوع استخدمه مباشرة
-    if diagram_type == "class":
-        class_match = re.search(r"(classDiagram[\s\S]*)", text)
-        if class_match:
-            return class_match.group(1).strip()
-
-    if diagram_type == "erd":
-        erd_match = re.search(r"(erDiagram[\s\S]*)", text)
-        if erd_match:
-            return erd_match.group(1).strip()
-
-    # auto detect
-    class_match = re.search(r"(classDiagram[\s\S]*)", text)
-    if class_match:
-        return class_match.group(1).strip()
-
-    erd_match = re.search(r"(erDiagram[\s\S]*)", text)
-    if erd_match:
-        return erd_match.group(1).strip()
-
-    mindmap_match = re.search(r"(mindmap[\s\S]*)", text)
-    if mindmap_match:
-        return mindmap_match.group(1).strip()
-
-    return text.strip()
-
-import json
-
-def json_to_mermaid(json_text: str) -> str:
-
-    try:
-        data = json.loads(json_text)
-
-        lines = [
-            "mindmap",
-            f"  root(({data.get('root', 'System')}))"
-        ]
-
-        def add_children(children, level):
-
-            if not isinstance(children, list):
-                return
-
-            for child in children:
-
-                if not isinstance(child, dict):
-                    continue
-
-                name = child.get("name")
-
-                if not name:
-                    continue
-
-                indent = "  " * level
-
-                lines.append(f"{indent}{name}")
-
-                if "children" in child:
-                    add_children(child["children"], level + 1)
-
-        add_children(data.get("children", []), 2)
-
-        return "\n".join(lines)
-
-    except Exception as e:
-
-        print("JSON ERROR:", e)
-
-        return """mindmap
-  root((System))
-    Error"""
-
-def clean_mermaid_code(raw: str) -> str:
-
-    raw = (
-        raw.replace("```mermaid", "")
-           .replace("```", "")
-           .strip()
-    )
-
-    lines = raw.split("\n")
-    cleaned_lines = []
-
-    for line in lines:
-
-        stripped = line.rstrip()
-
-        if not stripped:
-            continue
-
-        cleaned_lines.append(stripped)
-
-    return "\n".join(cleaned_lines).strip()
-
 
 def auto_fix_mindmap(code: str) -> str:
     lines = [l.rstrip() for l in code.split("\n") if l.strip()]
@@ -237,107 +144,6 @@ def generate_mermaid(text: str, diagram_type: str) -> str:
         return generate_mindmap_from_text(text)
     
     prompt = get_prompt(text, diagram_type)
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        raw_code = response.choices[0].message.content.strip()
-        extracted = extract_mermaid(raw_code, diagram_type) 
-        cleaned = clean_mermaid_code(extracted)
-        return cleaned
-    except Exception as e:
-        print("Generate Mermaid Error:", e)
-        if diagram_type == "erd":
-            return "erDiagram\n    ENTITY {\n        int id PK\n    }"
-        return "classDiagram\n    class System {\n        +init()\n    }"
-
-
-def generate_mindmap_from_text(text: str) -> str:
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{
-                "role": "user",
-                "content": f"""Extract the main topic and subtopics from this text as JSON.
-Return ONLY valid JSON, no explanation, no markdown, no code blocks.
-
-Format:
-{{
-  "root": "Main Topic",
-  "children": [
-    {{
-      "name": "Subtopic 1",
-      "children": [
-        {{"name": "Detail 1"}},
-        {{"name": "Detail 2"}}
-      ]
-    }},
-    {{"name": "Subtopic 2"}}
-  ]
-}}
-
-Rules:
-- root must be a single short phrase
-- max 4 children
-- max 3 grandchildren per child
-- no special characters except spaces
-- return ONLY the JSON object
-
-Text: {text}
-"""
-            }]
-        )
-        
-        raw = response.choices[0].message.content.strip()
-        raw = raw.replace("```json", "").replace("```", "").strip()
-        
-        json_match = re.search(r'\{[\s\S]*\}', raw)
-        if json_match:
-            raw = json_match.group(0)
-        
-        data = json.loads(raw)
-        result = build_mindmap(data)
-        
-        if "root((" not in result:
-            raise ValueError("Invalid mindmap generated")
-            
-        return result
-        
-    except Exception as e:
-        print(f"Mindmap Error: {type(e).__name__}: {e}")
-        print(f"Raw response was: {raw}")
-        return f"mindmap\n  root(({text[:20]}))\n    Error generating diagram"
-
-
-def build_mindmap(data: dict) -> str:
-    def clean(text):
-        return re.sub(r'[^\w\s\-]', '', str(text)).strip()
-    
-    root = clean(data.get("root", "System"))
-    lines = ["mindmap", f"  root(({root}))"]
-    
-    for child in data.get("children", []):
-        if not isinstance(child, dict):
-            continue
-        name = clean(child.get("name", ""))
-        if not name:
-            continue
-        lines.append("    " + name)
-        print(f"DEBUG child: '{name}'")
-        
-        for grandchild in child.get("children", []):
-            if not isinstance(grandchild, dict):
-                continue
-            gname = clean(grandchild.get("name", ""))
-            if not gname:
-                continue
-            lines.append("      " + gname)
-    
-    result = "\n".join(lines)
-    print(f"DEBUG final mindmap:\n{result}")
-    
-    return result
 
 def analyze_text(text: str) -> str:
 
