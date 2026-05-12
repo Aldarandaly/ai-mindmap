@@ -2,16 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../data/auth_repository.dart';
-import '../../projects/ui/projects_screen.dart';
-import '../../../shared/widgets/app_button.dart';
-<<<<<<< Updated upstream
-import '../../../shared/widgets/app_text_field.dart';
-import '../../../core/network/api_client.dart';
-=======
-import '../../../shared/widgets/network_background.dart';
->>>>>>> Stashed changes
-import 'register_screen.dart';
 import '../../main/ui/main.screen.dart';
+import '../../../shared/widgets/network_background.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -42,24 +35,10 @@ class _LoginScreenState extends State<LoginScreen> {
       password: _passwordController.text,
     );
     setState(() => _isLoading = false);
-<<<<<<< Updated upstream
-
-    if (result['success']) {
-      final token = result['data']['token'];
-      await ApiClient().saveToken(token);
-      await ApiClient().loadToken();
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MainScreen()),
-        );
-      }
-=======
     if (result['success'] == true) {
       if (mounted) Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (_) => const ProjectsScreen()),
+        context, MaterialPageRoute(builder: (_) => const MainScreen()),
       );
->>>>>>> Stashed changes
     } else {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -88,67 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   _buildLogo(),
                   const SizedBox(height: 16),
 
-<<<<<<< Updated upstream
-                // Title
-                const Text(
-                  'AI MindMap',
-                  style: TextStyle(
-                    fontSize: AppSizes.fontXxl,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.xs),
-                const Text(
-                  'Sign in to your account',
-                  style: TextStyle(
-                    fontSize: AppSizes.fontMd,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSizes.xl),
-
-                // Fields
-                AppTextField(
-                  label: 'Email',
-                  hint: 'email@example.com',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: Icons.email_outlined,
-                  validator: (val) {
-                    if (val == null || val.isEmpty) return 'Email is required';
-                    if (!val.contains('@')) return 'Enter a valid email';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSizes.md),
-
-                AppTextField(
-                  label: 'Password',
-                  hint: '••••••••',
-                  controller: _passwordController,
-                  isPassword: true,
-                  validator: (val) {
-                    if (val == null || val.isEmpty)
-                      return 'Password is required';
-                    if (val.length < 6) return 'Minimum 6 characters';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSizes.sm),
-
-                // Forgot Password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'Forgot password?',
-                      style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: AppSizes.fontSm,
-                      ),
-=======
                   // ── App name ──────────────────────────
                   RichText(
                     text: const TextSpan(
@@ -170,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ],
->>>>>>> Stashed changes
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -181,14 +98,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppColors.textSecondary,
                       letterSpacing: 0.5,
                     ),
-<<<<<<< Updated upstream
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegisterScreen(),
-                        ),
-=======
                   ),
 
                   const SizedBox(height: 40),
@@ -215,10 +124,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscure: _obscurePassword,
                     suffix: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                         color: AppColors.textTertiary,
                         size: 20,
->>>>>>> Stashed changes
                       ),
                       onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
@@ -258,7 +168,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.15))),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('or', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
+                        child: Text(
+                          'or',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                       Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.15))),
                     ],
@@ -277,7 +193,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Text(
                         'No account? ',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 14,
+                        ),
                       ),
                       GestureDetector(
                         onTap: () => Navigator.push(
@@ -304,33 +223,14 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-<<<<<<< Updated upstream
   Widget _buildLogo() {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-      ),
-      child: const Center(
-        child: Text(
-          'D',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-          ),
-=======
-  // ── Widgets ────────────────────────────────────────────────
-Widget _buildLogo() {
-  return Image.asset(
-    'assets/images/logo.jpeg',
-    width: 100,
-    height: 100,
-    fit: BoxFit.contain,
-  );
-}
+    return Image.asset(
+      'assets/images/logo.jpeg',
+      width: 100,
+      height: 100,
+      fit: BoxFit.contain,
+    );
+  }
 
   Widget _buildGlassField({
     required TextEditingController controller,
@@ -374,26 +274,11 @@ Widget _buildLogo() {
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.error, width: 1.5),
->>>>>>> Stashed changes
         ),
       ),
     );
   }
 
-<<<<<<< Updated upstream
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        const Expanded(child: Divider(color: AppColors.border)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
-          child: Text(
-            'or',
-            style: TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: AppSizes.fontSm,
-            ),
-=======
   Widget _buildGradientButton({
     required String label,
     VoidCallback? onPressed,
@@ -423,7 +308,8 @@ Widget _buildLogo() {
           child: Center(
             child: isLoading
                 ? const SizedBox(
-                    width: 22, height: 22,
+                    width: 22,
+                    height: 22,
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                   )
                 : Text(
@@ -435,7 +321,6 @@ Widget _buildLogo() {
                       letterSpacing: 0.5,
                     ),
                   ),
->>>>>>> Stashed changes
           ),
         ),
       ),
@@ -468,23 +353,6 @@ Widget _buildLogo() {
             ],
           ),
         ),
-<<<<<<< Updated upstream
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.g_mobiledata, size: 20, color: AppColors.textSecondary),
-            SizedBox(width: AppSizes.sm),
-            Text(
-              'Continue with Google',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: AppSizes.fontMd,
-              ),
-            ),
-          ],
-        ),
-=======
->>>>>>> Stashed changes
       ),
     );
   }

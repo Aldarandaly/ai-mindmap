@@ -10,14 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-<<<<<<< Updated upstream
-=======
   dio: ^5.4.0
   flutter_secure_storage: ^9.0.0
->>>>>>> Stashed changes
   webview_flutter: ^4.7.0
-  dio: ^5.4.0
-  flutter_secure_storage: ^9.0.0
   shared_preferences: ^2.3.0
   screenshot: ^3.0.0
   path_provider: ^2.1.2
@@ -31,10 +26,6 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
-<<<<<<< Updated upstream
-  uses-material-design: true
-=======
   uses-material-design: true
   assets:
-    - assets/images/
->>>>>>> Stashed changes
+    - assets/images/q
