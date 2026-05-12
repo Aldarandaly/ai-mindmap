@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Diagram extends Model
 {
-    protected $fillable = ['project_id', 'input_text', 'diagram_code', 'type', 'status'];
+    protected $fillable = ['project_id','name', 'input_text', 'diagram_code', 'type', 'status'];
 
     public function project()
     {

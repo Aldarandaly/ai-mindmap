@@ -5,7 +5,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../data/diagram_model.dart';
 
 class DiagramCard extends StatelessWidget {
-  final DiagramModel diagram;
+  final Diagram diagram;
   final VoidCallback onTap;
 
   const DiagramCard({super.key, required this.diagram, required this.onTap});
@@ -86,29 +86,42 @@ class DiagramCard extends StatelessWidget {
 
   Color _typeColor(String type) {
     switch (type) {
-      case 'erd': return AppColors.diagramErd;
-      case 'class': return AppColors.diagramClass;
-      case 'mindmap': return AppColors.diagramMindmap;
-      default: return AppColors.diagramAuto;
+      case 'erd':
+        return AppColors.diagramErd;
+      case 'class':
+        return AppColors.diagramClass;
+      case 'mindmap':
+        return AppColors.diagramMindmap;
+      default:
+        return AppColors.diagramAuto;
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type) {
-      case 'erd': return Icons.table_chart_rounded;
-      case 'class': return Icons.code_rounded;
-      case 'mindmap': return Icons.account_tree_rounded;
-      default: return Icons.auto_awesome_rounded;
+      case 'erd':
+        return Icons.table_chart_rounded;
+      case 'class':
+        return Icons.code_rounded;
+      case 'mindmap':
+        return Icons.account_tree_rounded;
+      default:
+        return Icons.auto_awesome_rounded;
     }
   }
 
   String _statusLabel(String status) {
     switch (status) {
-      case 'done': return 'Generated';
-      case 'processing': return 'Processing';
-      case 'pending': return 'Pending';
-      case 'failed': return 'Failed';
-      default: return status;
+      case 'done':
+        return 'Generated';
+      case 'processing':
+        return 'Processing';
+      case 'pending':
+        return 'Pending';
+      case 'failed':
+        return 'Failed';
+      default:
+        return status;
     }
   }
 }
@@ -146,12 +159,18 @@ class _StatusDot extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color;
     switch (status) {
-      case 'done': color = AppColors.success; break;
-      case 'failed': color = AppColors.error; break;
-      default: color = AppColors.warning;
+      case 'done':
+        color = AppColors.success;
+        break;
+      case 'failed':
+        color = AppColors.error;
+        break;
+      default:
+        color = AppColors.warning;
     }
     return Container(
-      width: 6, height: 6,
+      width: 6,
+      height: 6,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }

@@ -6,7 +6,7 @@ class ProjectService
 {
     public function getUserProjects($user)
     {
-        return $user->projects;
+        return $user->projects()->withCount('diagrams')->get();
     }
 
     public function createProject($user, $name)

@@ -18,6 +18,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('projects', ProjectController::class)->only(['index', 'store', 'show']);
 
     Route::post('/diagrams/generate', [DiagramController::class, 'generate']);
+    Route::get('/diagrams/recent', [DiagramController::class, 'recent']); 
     Route::get('/projects/{project}/diagrams', [DiagramController::class, 'index']);
     Route::get('/diagrams/{diagram}', [DiagramController::class, 'show']);
+
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
 });

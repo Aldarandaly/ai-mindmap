@@ -51,6 +51,32 @@ class AuthController extends Controller
     // user profile
     public function profile(Request $request)
     {
-        return response()->json($request->user());
+        $user = $request->user();
+        return response()->json([
+            'id'             => $user->id,
+            'name'           => $user->name,
+            'email'          => $user->email,
+            'projects_count' => $user->projects()->count(),
+            'diagrams_count' => $user->projects()->withCount('diagrams')->get()->sum('diagrams_count'),
+            'created_at'     => $user->created_at,
+        ]);
+    }
+    // update profile
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $request->user()->id,
+        ]);
+
+        $request->user()->update([
+            'name'  => $request->name,
+            'email' => $request->email,
+        ]);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user'    => $request->user(),
+        ]);
     }
 }

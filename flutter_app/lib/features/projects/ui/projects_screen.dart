@@ -1,36 +1,45 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/network/api_exception.dart';
-import '../../auth/ui/login_screen.dart';
 import '../../diagrams/ui/project_detail_screen.dart';
 import '../data/project_repository.dart';
-import 'projects_model.dart';
-import 'widgets/project_card.dart';
+import '../data/projects_model.dart';
 import 'widgets/create_project_modal.dart';
 
-class ProjectsScreen extends StatefulWidget {
-  const ProjectsScreen({super.key});
+String _initials = '';
+final _apiClient = ApiClient();
+
+class ProjectsBody extends StatefulWidget {
+  final void Function(VoidCallback)? onRegisterShowModal;
+
+  const ProjectsBody({super.key, this.onRegisterShowModal});
 
   @override
-  State<ProjectsScreen> createState() => _ProjectsScreenState();
+  State<ProjectsBody> createState() => _ProjectsBodyState();
 }
 
-class _ProjectsScreenState extends State<ProjectsScreen> {
+class _ProjectsBodyState extends State<ProjectsBody> {
   final _repo = ProjectRepository();
   final _searchController = TextEditingController();
 
   List<ProjectModel> _projects = [];
   List<ProjectModel> _filtered = [];
+
   bool _isLoading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _loadProjects();
+
+    widget.onRegisterShowModal?.call(_showCreateModal);
+
+    _init();
     _searchController.addListener(_onSearch);
+  }
+
+  Future<void> _init() async {
+    await _loadProjects();
+    await _loadInitials();
   }
 
   @override
@@ -41,28 +50,46 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
   void _onSearch() {
     final q = _searchController.text.toLowerCase();
+
     setState(() {
       _filtered = q.isEmpty
           ? _projects
-          : _projects
-              .where((p) =>
-                  p.name.toLowerCase().contains(q) ||
-                  p.description.toLowerCase().contains(q))
-              .toList();
+          : _projects.where((p) {
+              return p.name.toLowerCase().contains(q) ||
+                  p.description.toLowerCase().contains(q);
+            }).toList();
     });
   }
 
   Future<void> _loadProjects() async {
-    setState(() { _isLoading = true; _error = null; });
-    try {
-      final projects = await _repo.getProjects();
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    final result = await _repo.getProjects();
+
+    if (result['success']) {
       setState(() {
-        _projects = projects;
-        _filtered = projects;
+        _projects = List<ProjectModel>.from(result['data']);
+        _filtered = _projects;
         _isLoading = false;
       });
-    } on ApiException catch (e) {
-      setState(() { _error = e.message; _isLoading = false; });
+    } else {
+      setState(() {
+        _error = result['message'];
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadInitials() async {
+    final name = await _apiClient.getUserName();
+
+    if (name != null && name.isNotEmpty) {
+      setState(() {
+        _initials = name[0].toUpperCase();
+      });
     }
   }
 
@@ -71,41 +98,42 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => CreateProjectModal(
-        onCreated: (project) {
-          setState(() {
-            _projects.insert(0, project);
-            _filtered = _projects;
-          });
-        },
-      ),
+      builder: (_) {
+        return Container(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          decoration: const BoxDecoration(
+            color: Color(0xFF171717),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: CreateProjectModal(
+            onCreated: (project) {
+              setState(() {
+                _projects.insert(0, project);
+                _filtered = _projects;
+              });
+            },
+          ),
+        );
+      },
     );
-  }
-
-  void _logout() async {
-    await ApiClient().clearToken();
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
+    return SafeArea(
+      child: Container(
+        color: const Color(0xFF111111),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────
+            /// HEADER
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.screenPadding, AppSizes.lg,
-                AppSizes.screenPadding, 0,
-              ),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
               child: Row(
                 children: [
                   Expanded(
@@ -113,41 +141,37 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Projects',
+                          "Projects",
                           style: TextStyle(
-                            fontSize: AppSizes.fontXxl,
+                            color: Colors.white,
+                            fontSize: 32,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
                           ),
                         ),
-                        if (!_isLoading && _error == null)
-                          Text(
-                            '${_projects.length} project${_projects.length == 1 ? '' : 's'}',
-                            style: const TextStyle(
-                              fontSize: AppSizes.fontSm,
-                              color: AppColors.textTertiary,
-                            ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "${_projects.length} projects",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(.5),
+                            fontSize: 14,
                           ),
+                        ),
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: _logout,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(AppSizes.radiusRound),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'JD',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: AppSizes.fontSm,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF5B4DFF),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        _initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -156,270 +180,185 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               ),
             ),
 
-            const SizedBox(height: AppSizes.md),
+            const SizedBox(height: 22),
 
-            // ── Search Bar ───────────────────────────────
+            /// SEARCH
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSizes.screenPadding,
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: AppSizes.fontMd,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(.06)),
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Search projects...',
-                  hintStyle: const TextStyle(
-                    color: AppColors.textTertiary,
-                    fontSize: AppSizes.fontMd,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: AppColors.textTertiary,
-                    size: AppSizes.iconMd,
-                  ),
-                  filled: true,
-                  fillColor: AppColors.surface,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppSizes.md,
-                    vertical: AppSizes.sm,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                    borderSide: const BorderSide(color: AppColors.border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                    borderSide: const BorderSide(
-                      color: AppColors.primary,
-                      width: 1.5,
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: "Search projects...",
+                    hintStyle: TextStyle(color: Colors.white.withOpacity(.35)),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: Colors.white.withOpacity(.4),
                     ),
                   ),
                 ),
               ),
             ),
 
-            const SizedBox(height: AppSizes.md),
+            const SizedBox(height: 20),
 
-            // ── Body ─────────────────────────────────────
+            /// LIST
             Expanded(
               child: _isLoading
-                  ? _buildLoading()
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF5B4DFF),
+                      ),
+                    )
                   : _error != null
-                      ? _buildError()
-                      : _filtered.isEmpty
-                          ? _buildEmpty()
-                          : _buildList(),
+                  ? _buildError()
+                  : _filtered.isEmpty
+                  ? _buildEmpty()
+                  : RefreshIndicator(
+                      onRefresh: _loadProjects,
+                      color: const Color(0xFF5B4DFF),
+                      child: ListView.builder(
+                        padding: EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          bottom: MediaQuery.of(context).padding.bottom + 120,
+                        ),
+                        itemCount: _filtered.length,
+                        itemBuilder: (_, i) {
+                          final project = _filtered[i];
+
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ProjectDetailScreen(project: project),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1A1A1A),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(.05),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          project.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          project.description,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(
+                                              .55,
+                                            ),
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Text(
+                                          "Updated recently",
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(.3),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF5B4DFF,
+                                      ).withOpacity(.15),
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    child: Text(
+                                      "${project.diagramsCount} diagram${project.diagramsCount == 1 ? '' : 's'}",
+                                      style: const TextStyle(
+                                        color: Color(0xFF8C7BFF),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
       ),
-
-      bottomNavigationBar: _buildBottomNav(),
-
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateModal,
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'New project',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoading() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
-      itemCount: 4,
-      itemBuilder: (_, __) => _ShimmerCard(),
     );
   }
 
   Widget _buildError() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.wifi_off_rounded, size: 56, color: AppColors.textTertiary),
-            const SizedBox(height: AppSizes.md),
-            Text(
-              _error ?? 'Something went wrong',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: AppSizes.fontMd,
-              ),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            TextButton(
-              onPressed: _loadProjects,
-              child: const Text('Try again',
-                  style: TextStyle(color: AppColors.primary)),
-            ),
-          ],
-        ),
+      child: Text(
+        _error ?? "Something went wrong",
+        style: const TextStyle(color: Colors.white),
       ),
     );
   }
 
   Widget _buildEmpty() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-              ),
-              child: const Icon(
-                Icons.folder_open_rounded,
-                size: 36,
-                color: AppColors.textTertiary,
-              ),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            const Text(
-              'No projects yet',
-              style: TextStyle(
-                fontSize: AppSizes.fontXl,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: AppSizes.xs),
-            const Text(
-              'Create your first project to get started',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: AppSizes.fontMd,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSizes.xl),
-            ElevatedButton.icon(
-              onPressed: _showCreateModal,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.lg,
-                  vertical: AppSizes.md,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                ),
-              ),
-              icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text(
-                'Create project',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildList() {
-    return RefreshIndicator(
-      onRefresh: _loadProjects,
-      color: AppColors.primary,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.screenPadding,
-          vertical: AppSizes.sm,
-        ),
-        itemCount: _filtered.length,
-        itemBuilder: (_, i) => ProjectCard(
-          project: _filtered[i],
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProjectDetailScreen(project: _filtered[i]),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textTertiary,
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.folder_rounded),
-            label: 'Projects',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_rounded),
-            label: 'Recent',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_rounded),
-            label: 'Settings',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShimmerCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(AppSizes.cardPadding),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-      ),
-      child: Row(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 50, height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(12),
+          Icon(
+            Icons.folder_open_rounded,
+            size: 60,
+            color: Colors.white.withOpacity(.2),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            "No projects yet",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(height: 14, width: 140, color: AppColors.border),
-                const SizedBox(height: 8),
-                Container(height: 12, width: 90, color: AppColors.border),
-              ],
-            ),
+          const SizedBox(height: 8),
+          Text(
+            "Create your first project",
+            style: TextStyle(color: Colors.white.withOpacity(.5)),
           ),
         ],
       ),

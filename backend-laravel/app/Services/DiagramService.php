@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use App\Jobs\GenerateDiagramJob;
 use App\Models\Diagram;
 use App\Models\Project;
@@ -35,20 +36,64 @@ class DiagramService
         }
 
         $diagram = $project->diagrams()->create([
+            'name'       => $data['name'] ?? 'Untitled',
             'input_text' => $data['input_text'],
-            'type' => $data['type'] ?? 'auto',
-            'status' => 'processing'
+            'type'       => $data['type'] ?? 'auto',
+            'status'     => 'processing',
         ]);
 
-        $result = app(AIService::class)->generateDiagram(
-            $data['input_text'],
-            $data['type'] ?? 'auto'
-        );
+        try {
+            $result = app(AIService::class)->generateDiagram(
+                $data['input_text'],
+                $data['type'] ?? 'auto'
+            );
 
-        $diagram->update([
-            'diagram_code' => $result['diagram_code'],
-            'status' => 'done'
-        ]);
+            Log::info('AI Result:', $result);
+
+            $cleanCode = $result['diagram_code'];
+            $cleanCode = str_replace(['```mermaid', '```'], '', $cleanCode);
+            $cleanCode = trim($cleanCode);
+
+            if (str_starts_with(ltrim($cleanCode), 'mindmap')) {
+                $lines = explode("\n", $cleanCode);
+                $fixed = ['mindmap'];
+                $rootAdded = false;
+
+                foreach ($lines as $line) {
+                    $trimmed = trim($line);
+                    if ($trimmed === 'mindmap' || $trimmed === '') continue;
+
+                    if (str_contains($trimmed, 'root((')) {
+                        if (!$rootAdded) {
+                            $fixed[] = '  ' . $trimmed;
+                            $rootAdded = true;
+                        }
+                        continue;
+                    }
+                    $fixed[] = $line;
+                }
+
+                if (!$rootAdded) {
+                    array_splice($fixed, 1, 0, ['  root((System))']);
+                }
+
+                $cleanCode = implode("\n", $fixed);
+            } else {
+                $cleanCode = preg_replace('/^(classDiagram\s*)+/i', 'classDiagram' . PHP_EOL, $cleanCode);
+                $cleanCode = preg_replace('/^(erDiagram\s*)+/i', 'erDiagram' . PHP_EOL, $cleanCode);
+                $cleanCode = preg_replace('/\s*\*-+>>\s*/', ' --> ', $cleanCode);
+                $cleanCode = preg_replace('/\s*--\*\s*/', ' *-- ', $cleanCode);
+            }
+
+            $diagram->update([
+                'diagram_code' => $cleanCode,
+                'type'         => $result['type'] ?? $data['type'],
+                'status'       => 'done',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('AI Error: ' . $e->getMessage());
+            $diagram->update(['status' => 'failed']);
+        }
 
         return $diagram;
     }

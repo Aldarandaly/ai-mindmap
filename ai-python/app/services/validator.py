@@ -28,7 +28,8 @@ def advanced_validate_mermaid(code: str, diagram_type: str) -> bool:
         return "classDiagram" in code and ("--" in code or "<|" in code)
 
     if diagram_type == "erd":
-        return "erDiagram" in code and ("||" in code or "}|" in code)
+     return "erDiagram" in code and any(rel in code for rel in ["||", "|{", "}o", "}|"])
+    
 
     if diagram_type == "mindmap":
         return "mindmap" in code and len(code.splitlines()) > 2

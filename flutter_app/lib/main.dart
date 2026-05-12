@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
-import 'core/network/api_client.dart';
 import 'features/auth/ui/login_screen.dart';
-import 'features/projects/ui/projects_screen.dart';
+import 'features/main/ui/main.screen.dart';
+import 'core/constants/app_colors.dart';
+import 'core/network/api_client.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Load token from secure storage into dio headers
-  final client = ApiClient();
-  await client.loadToken();
-  final isLoggedIn = await client.hasToken();
-
-  runApp(MyApp(isLoggedIn: isLoggedIn));
+  final hasToken = await ApiClient().hasToken();
+  runApp(MyApp(isLoggedIn: hasToken));
 }
 
 class MyApp extends StatelessWidget {
@@ -21,18 +17,29 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DiagramAI',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF4F46E5),
-          brightness: Brightness.dark,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: AppColors.background,
+        canvasColor: AppColors.background,
+        cardColor: AppColors.surface,
+        dividerColor: AppColors.border,
+        colorScheme: const ColorScheme.dark(
+          primary: AppColors.primary,
+          surface: AppColors.surface,
+          onSurface: AppColors.textPrimary,
+          onPrimary: Colors.white,
         ),
-        fontFamily: 'Inter',
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0F0E17),
+        textTheme: ThemeData.dark().textTheme.apply(
+          bodyColor: AppColors.textPrimary,
+          displayColor: AppColors.textPrimary,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: AppColors.surface,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.textTertiary,
+        ),
       ),
-      home: isLoggedIn ? const ProjectsScreen() : const LoginScreen(),
+      home: isLoggedIn ? MainScreen() : const LoginScreen(),
     );
   }
 }

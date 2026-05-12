@@ -1,42 +1,44 @@
 import '../../../core/network/api_client.dart';
-import '../../../core/network/api_endpoints.dart';
-import '../../../core/network/api_exception.dart';
-import '../ui/projects_model.dart';
+import 'projects_model.dart';
 
 class ProjectRepository {
-  final ApiClient _client = ApiClient();
+  final _client = ApiClient();
 
-  Future<List<ProjectModel>> getProjects() async {
+  Future<Map<String, dynamic>> getProjects() async {
     try {
-      final response = await _client.get(ApiEndpoints.projects);
-      final data = response['data'] as List<dynamic>? ?? [];
-      return data.map((e) => ProjectModel.fromJson(e)).toList();
-    } on ApiException {
-      rethrow;
+      final response = await _client.get('/projects');
+      final List data = response is List ? response : response['data'] ?? [];
+      return {
+        'success': true,
+        'data': data.map((e) => ProjectModel.fromJson(e)).toList(),
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 
-  Future<ProjectModel> createProject({
-    required String name,
-    required String description,
-  }) async {
+  Future<Map<String, dynamic>> createProject(String name) async {
     try {
-      final response = await _client.post(
-        ApiEndpoints.projects,
-        data: {'name': name, 'description': description},
-      );
-      return ProjectModel.fromJson(response['data'] ?? response);
-    } on ApiException {
-      rethrow;
+      final response = await _client.post('/projects', data: {'name': name});
+      final projectData = response is Map ? response['data'] ?? response : response;
+      return {
+        'success': true,
+        'data': ProjectModel.fromJson(projectData),
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 
-  Future<ProjectModel> getProject(int id) async {
+  Future<Map<String, dynamic>> getProject(int id) async {
     try {
-      final response = await _client.get(ApiEndpoints.projectById(id));
-      return ProjectModel.fromJson(response['data'] ?? response);
-    } on ApiException {
-      rethrow;
+      final response = await _client.get('/projects/$id');
+      return {
+        'success': true,
+        'data': ProjectModel.fromJson(response['data'] ?? response),
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 }

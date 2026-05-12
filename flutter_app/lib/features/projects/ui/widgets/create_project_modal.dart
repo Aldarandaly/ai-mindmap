@@ -5,7 +5,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../data/project_repository.dart';
-import '../projects_model.dart';
+import '../../data/projects_model.dart';
 
 class CreateProjectModal extends StatefulWidget {
   final void Function(ProjectModel) onCreated;
@@ -30,32 +30,30 @@ class _CreateProjectModalState extends State<CreateProjectModal> {
     super.dispose();
   }
 
-  void _create() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
+ void _create() async {
+  if (!_formKey.currentState!.validate()) return;
+  setState(() => _isLoading = true);
 
-    try {
-      final project = await _repo.createProject(
-        name: _nameController.text.trim(),
-        description: _descController.text.trim(),
+  final result = await _repo.createProject(_nameController.text.trim());
+
+  if (result['success']) {
+    if (mounted) {
+      Navigator.pop(context);
+      widget.onCreated(result['data']);
+    }
+  } else {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message']),
+          backgroundColor: AppColors.error,
+        ),
       );
-      if (mounted) {
-        Navigator.pop(context);
-        widget.onCreated(project);
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
+
+  if (mounted) setState(() => _isLoading = false);
+}
 
   @override
   Widget build(BuildContext context) {

@@ -1,46 +1,46 @@
-class DiagramModel {
+class Diagram {
   final int id;
   final int projectId;
   final String name;
+  final String inputText;
+  final String? diagramCode;
   final String type;
   final String status;
-  final String? diagramCode;
-  final DateTime? createdAt;
+  final DateTime createdAt;
 
-  const DiagramModel({
+  Diagram({
     required this.id,
     required this.projectId,
     required this.name,
+    required this.inputText,
+    this.diagramCode,
     required this.type,
     required this.status,
-    this.diagramCode,
-    this.createdAt,
+    required this.createdAt,
   });
 
-  factory DiagramModel.fromJson(Map<String, dynamic> json) {
-    return DiagramModel(
-      id: json['id'] as int,
-      projectId: json['project_id'] as int? ?? 0,
-      name: json['name'] as String? ?? '',
-      type: json['type'] as String? ?? 'auto',
-      status: json['status'] as String? ?? 'pending',
-      diagramCode: json['diagram_code'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String)
-          : null,
-    );
-  }
-
-  bool get isDone => status == 'done';
-  bool get isPending => status == 'pending' || status == 'processing';
+  bool get isDone => status == 'done' || status == 'completed';
   bool get isFailed => status == 'failed';
 
   String get createdAtLabel {
-    if (createdAt == null) return '';
-    final diff = DateTime.now().difference(createdAt!);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'yesterday';
-    return '${diff.inDays}d ago';
+    final now = DateTime.now();
+    final diff = now.difference(createdAt);
+    if (diff.inMinutes < 1) return 'الآن';
+    if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} دقيقة';
+    if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعة';
+    return 'منذ ${diff.inDays} يوم';
+  }
+
+  factory Diagram.fromJson(Map<String, dynamic> json) {
+    return Diagram(
+      id: int.tryParse(json['id'].toString()) ?? 0,
+      projectId: int.tryParse(json['project_id'].toString()) ?? 0,
+      name: json['name'] ?? '',
+      inputText: json['input_text'] ?? '',
+      diagramCode: json['diagram_code'],
+      type: json['type'] ?? 'auto',
+      status: json['status'] ?? 'pending',
+      createdAt: DateTime.parse(json['created_at']),
+    );
   }
 }

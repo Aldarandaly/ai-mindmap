@@ -5,7 +5,9 @@ import '../data/auth_repository.dart';
 import '../../projects/ui/projects_screen.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../../shared/widgets/app_text_field.dart';
+import '../../../core/network/api_client.dart';
 import 'register_screen.dart';
+import '../../main/ui/main.screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,11 +41,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = false);
 
-    if (result['success'] == true) {
+    if (result['success']) {
+      final token = result['data']['token'];
+      await ApiClient().saveToken(token);
+      await ApiClient().loadToken();
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const ProjectsScreen()),
+          MaterialPageRoute(builder: (_) => MainScreen()),
         );
       }
     } else {
@@ -78,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Title
                 const Text(
-                  'Welcome back',
+                  'AI MindMap',
                   style: TextStyle(
                     fontSize: AppSizes.fontXxl,
                     fontWeight: FontWeight.w700,
@@ -116,7 +121,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   isPassword: true,
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'Password is required';
+                    if (val == null || val.isEmpty)
+                      return 'Password is required';
                     if (val.length < 6) return 'Minimum 6 characters';
                     return null;
                   },
@@ -169,7 +175,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
                       ),
                       child: const Text(
                         'Create one',
@@ -201,7 +209,11 @@ class _LoginScreenState extends State<LoginScreen> {
       child: const Center(
         child: Text(
           'D',
-          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -215,7 +227,10 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
           child: Text(
             'or',
-            style: TextStyle(color: AppColors.textTertiary, fontSize: AppSizes.fontSm),
+            style: TextStyle(
+              color: AppColors.textTertiary,
+              fontSize: AppSizes.fontSm,
+            ),
           ),
         ),
         const Expanded(child: Divider(color: AppColors.border)),
@@ -242,7 +257,10 @@ class _LoginScreenState extends State<LoginScreen> {
             SizedBox(width: AppSizes.sm),
             Text(
               'Continue with Google',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: AppSizes.fontMd),
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: AppSizes.fontMd,
+              ),
             ),
           ],
         ),

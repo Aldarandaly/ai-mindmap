@@ -1,50 +1,83 @@
 import '../../../core/network/api_client.dart';
-import '../../../core/network/api_endpoints.dart';
-import '../../../core/network/api_exception.dart';
-import 'diagram_model.dart';
+import '../data/diagram_model.dart';
 
 class DiagramRepository {
-  final ApiClient _client = ApiClient();
+  final _client = ApiClient();
 
-  Future<List<DiagramModel>> getProjectDiagrams(int projectId) async {
+  Future<Map<String, dynamic>> getDiagrams(int projectId) async {
     try {
-      final response = await _client.get(ApiEndpoints.projectDiagrams(projectId));
-      final data = response['data'] as List<dynamic>? ?? [];
-      return data.map((e) => DiagramModel.fromJson(e)).toList();
-    } on ApiException {
-      rethrow;
+      final response = await _client.get('/projects/$projectId/diagrams');
+
+      List data = [];
+      if (response is List) {
+        data = response;
+      } else if (response is Map) {
+        final d = response['data'];
+        if (d is List) {
+          data = d;
+        } else if (d is Map) {
+          data = [d];
+        }
+      }
+
+      return {
+        'success': true,
+        'data': data
+            .map((e) => Diagram.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
     }
   }
 
-  Future<DiagramModel> generateDiagram({
+  Future<Map<String, dynamic>> getRecentDiagrams() async {
+    try {
+      final response = await _client.get('/diagrams/recent');
+      print('RECENT RESPONSE: $response');
+      List data = response is List ? response : response['data'] ?? [];
+      return {
+        'success': true,
+        'data': data
+            .map((e) => Diagram.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+      };
+    } catch (e) {
+      print('RECENT ERROR: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Diagram> generateDiagram({
     required int projectId,
     required String name,
-    required String description, // ✅ كان text، اتغير لـ description
+    required String description,
     required String type,
   }) async {
     try {
+      print('GENERATING: projectId=$projectId, name=$name, type=$type');
       final response = await _client.post(
-        ApiEndpoints.generateDiagram,
+        '/diagrams/generate',
         data: {
           'project_id': projectId,
           'name': name,
-          'text': description, // بنبعته للـ API كـ text زي ما هو متوقع
+          'input_text': description,
           'type': type,
-          'mode': 'generate',
         },
       );
-      return DiagramModel.fromJson(response['data'] ?? response);
-    } on ApiException {
+      print('GENERATE RESPONSE: $response');
+      final data = response is Map ? (response['data'] ?? response) : response;
+      return Diagram.fromJson(Map<String, dynamic>.from(data));
+    } catch (e) {
+      print('GENERATE ERROR: $e');
       rethrow;
     }
   }
 
-  Future<DiagramModel> getDiagram(int id) async {
-    try {
-      final response = await _client.get(ApiEndpoints.diagramById(id));
-      return DiagramModel.fromJson(response['data'] ?? response);
-    } on ApiException {
-      rethrow;
-    }
+  Future<Diagram> getDiagram(int id) async {
+    final response = await _client.get('/diagrams/$id');
+    print('GET DIAGRAM RESPONSE: $response');
+    final data = response is Map ? (response['data'] ?? response) : response;
+    return Diagram.fromJson(Map<String, dynamic>.from(data));
   }
 }

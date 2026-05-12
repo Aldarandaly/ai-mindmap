@@ -6,7 +6,10 @@ import 'api_exception.dart';
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;
-  ApiClient._internal();
+
+  ApiClient._internal() {
+    _loadTokenOnInit();
+  }
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -19,7 +22,24 @@ class ApiClient {
     ),
   );
 
+  // ── Token Auto Load ───────────────────────────────────────
+
+  Future<void> _loadTokenOnInit() async {
+    final token = await _storage.read(key: AppConstants.tokenKey);
+    if (token != null) {
+      _dio.options.headers['Authorization'] = 'Bearer $token';
+    }
+  }
+
   // ── Token Management ──────────────────────────────────────
+
+  Future<void> saveUserName(String name) async {
+    await _storage.write(key: 'user_name', value: name);
+  }
+
+  Future<String?> getUserName() async {
+    return await _storage.read(key: 'user_name');
+  }
 
   Future<void> saveToken(String token) async {
     await _storage.write(key: AppConstants.tokenKey, value: token);
@@ -45,48 +65,41 @@ class ApiClient {
 
   // ── HTTP Methods ──────────────────────────────────────────
 
-  Future<Map<String, dynamic>> get(String path) async {
+  Future<dynamic> get(String path) async {
     try {
       final response = await _dio.get(path);
-      return response.data as Map<String, dynamic>;
+      return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Map<String, dynamic>> post(
-    String path, {
-    Map<String, dynamic>? data,
-  }) async {
+  Future<dynamic> post(String path, {Map<String, dynamic>? data}) async {
     try {
       final response = await _dio.post(path, data: data);
-      return response.data as Map<String, dynamic>;
+      return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Map<String, dynamic>> put(
-    String path, {
-    Map<String, dynamic>? data,
-  }) async {
+  Future<dynamic> put(String path, {Map<String, dynamic>? data}) async {
     try {
       final response = await _dio.put(path, data: data);
-      return response.data as Map<String, dynamic>;
+      return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<Map<String, dynamic>> delete(String path) async {
+  Future<dynamic> delete(String path) async {
     try {
       final response = await _dio.delete(path);
-      return response.data as Map<String, dynamic>;
+      return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
-
   // ── Error Handler ─────────────────────────────────────────
 
   ApiException _handleError(DioException e) {
@@ -111,7 +124,8 @@ class ApiClient {
           return const NetworkException();
         }
         return ApiException(
-          message: e.response?.data?['message']?.toString() ??
+          message:
+              e.response?.data?['message']?.toString() ??
               'Something went wrong.',
           statusCode: e.response?.statusCode,
         );
