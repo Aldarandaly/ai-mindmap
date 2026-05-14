@@ -91,45 +91,7 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      extendBody: true, // content goes under nav bar
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          ProjectsBody(
-            onRegisterShowModal: (fn) => _showCreateModal = fn,
-          ),
-          const RecentScreen(),
-          const SettingsScreen(),
-        ],
-      ),
-      floatingActionButton: _buildFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: _buildBottomNav(),
-    );
-  }
 
-  // ── FAB ────────────────────────────────────────────────────────────────────
-  Widget _buildFAB() {
-    return AnimatedBuilder(
-      animation: _fabController,
-      builder: (_, __) => Transform.scale(
-        scale: _fabScale.value,
-        child: Transform.rotate(
-          angle: _fabRotate.value,
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              _showCreateModal?.call();
-            },
-            child: Container(
-              width: 58,
-              height: 58,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.accent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(AppSizes.radiusLg),
                 boxShadow: [
@@ -205,65 +167,4 @@ class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildNavTab(int index) {
-    final item = _navItems[index];
-    final isSelected = _currentIndex == index;
-
-    return GestureDetector(
-      onTap: () => _onTabTapped(index),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedBuilder(
-        animation: _tabAnimations[index],
-        builder: (_, __) {
-          final t = _tabAnimations[index].value;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Color.lerp(
-                Colors.transparent,
-                AppColors.primary.withValues(alpha: 0.12),
-                t,
-              ),
-              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Icon with gradient when selected
-                ShaderMask(
-                  shaderCallback: (bounds) => LinearGradient(
-                    colors: isSelected
-                        ? [AppColors.primary, AppColors.accent]
-                        : [
-                            AppColors.textTertiary.withValues(alpha: 0.5),
-                            AppColors.textTertiary.withValues(alpha: 0.5),
-                          ],
-                  ).createShader(bounds),
-                  blendMode: BlendMode.srcIn,
-                  child: Icon(
-                    item.icon,
-                    size: 22,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Label
-                Text(
-                  item.label,
-                  style: TextStyle(
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.textTertiary.withValues(alpha: 0.5),
-                    fontSize: AppSizes.fontXs,
-                    fontWeight:
-                        isSelected ? FontWeight.w700 : FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
 }

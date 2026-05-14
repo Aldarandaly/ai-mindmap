@@ -148,24 +148,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: NetworkBackground(
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: AppSizes.md),
-              _buildFilterChips(),
-              const SizedBox(height: AppSizes.md),
-              Expanded(
-                child: _isLoading
-                    ? _buildShimmer()
-                    : _error != null
-                        ? _buildError()
-                        : _filtered.isEmpty
-                            ? _buildEmpty()
-                            : _buildList(),
+
               ),
             ],
           ),

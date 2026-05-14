@@ -3,6 +3,7 @@ from typing import Literal, Optional
 
 class GenerateRequest(BaseModel):
     text: str
+    type: str = "auto"
     mode: Literal["generate", "analyse", "explain"] = "generate"
 
     @field_validator("text")

@@ -181,28 +181,13 @@ class _DiagramCardState extends State<DiagramCard>
   // ── Type helpers ──────────────────────────────────────────────────────────
   Color _typeColor(String type) {
     switch (type) {
-      case 'erd':      return AppColors.diagramErd;
-      case 'class':    return AppColors.diagramClass;
-      case 'mindmap':  return AppColors.diagramMindmap;
-      default:         return AppColors.diagramAuto;
-    }
-  }
 
-  Color _typeColor2(String type) {
-    switch (type) {
-      case 'erd':      return AppColors.accent;
-      case 'class':    return AppColors.primary;
-      case 'mindmap':  return AppColors.diagramErd;
-      default:         return AppColors.diagramMindmap;
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type) {
-      case 'erd':      return Icons.table_chart_rounded;
-      case 'class':    return Icons.code_rounded;
-      case 'mindmap':  return Icons.account_tree_rounded;
-      default:         return Icons.auto_awesome_rounded;
+
     }
   }
 
