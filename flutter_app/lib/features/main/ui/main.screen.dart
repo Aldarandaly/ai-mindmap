@@ -22,7 +22,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: [
         ProjectsBody(onRegisterShowModal: (fn) => _showCreateModal = fn),
         RecentScreen(),

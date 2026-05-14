@@ -37,7 +37,7 @@ class DiagramController extends Controller
             'project_id' => 'required|exists:projects,id',
             'name'       => 'nullable|string|max:255',
             'input_text' => 'required|string',
-            'type'       => 'nullable|in:class,erd,mindmap,auto',
+            'type'       => 'nullable|in:class,erd,mindmap,auto,usecase,activity,sequence,context,state,dfd,gantt',
         ]);
 
         $diagram = $this->diagramService->generate($request->all(), $request->user());

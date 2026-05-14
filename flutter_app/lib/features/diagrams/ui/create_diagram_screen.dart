@@ -51,20 +51,92 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   late Animation<int> _dotsAnimation;
 
   final List<_DiagramType> _types = const [
-    _DiagramType(key: 'auto', label: 'Auto', icon: Icons.auto_awesome_rounded, description: 'Picks the best type automatically'),
-    _DiagramType(key: 'class', label: 'Class', icon: Icons.account_tree_rounded, description: 'Class Diagram for OOP'),
-    _DiagramType(key: 'erd', label: 'ERD', icon: Icons.table_chart_rounded, description: 'Entity Relationship Diagram'),
-    _DiagramType(key: 'mindmap', label: 'Mind Map', icon: Icons.hub_rounded, description: 'Visual mind map for ideas'),
+    _DiagramType(
+      key: 'auto',
+      label: 'Auto',
+      icon: Icons.auto_awesome_rounded,
+      description: 'Picks the best type automatically',
+    ),
+    _DiagramType(
+      key: 'class',
+      label: 'Class',
+      icon: Icons.account_tree_rounded,
+      description: 'Class Diagram for OOP',
+    ),
+    _DiagramType(
+      key: 'erd',
+      label: 'ERD',
+      icon: Icons.table_chart_rounded,
+      description: 'Entity Relationship Diagram',
+    ),
+    _DiagramType(
+      key: 'mindmap',
+      label: 'Mind Map',
+      icon: Icons.hub_rounded,
+      description: 'Visual mind map for ideas',
+    ),
+    _DiagramType(
+      key: 'usecase',
+      label: 'Use Case',
+      icon: Icons.person_rounded,
+      description: 'System use cases',
+    ),
+    _DiagramType(
+      key: 'activity',
+      label: 'Activity',
+      icon: Icons.alt_route_rounded,
+      description: 'Activity flow diagram',
+    ),
+    _DiagramType(
+      key: 'sequence',
+      label: 'Sequence',
+      icon: Icons.swap_horiz_rounded,
+      description: 'Sequence of interactions',
+    ),
+    _DiagramType(
+      key: 'context',
+      label: 'Context',
+      icon: Icons.bubble_chart_rounded,
+      description: 'System context diagram',
+    ),
+    _DiagramType(
+      key: 'state',
+      label: 'State',
+      icon: Icons.stacked_line_chart_rounded,
+      description: 'State machine diagram',
+    ),
+    _DiagramType(
+      key: 'dfd',
+      label: 'DFD',
+      icon: Icons.share_rounded,
+      description: 'Data flow diagram',
+    ),
+    _DiagramType(
+      key: 'gantt',
+      label: 'Gantt',
+      icon: Icons.bar_chart_rounded,
+      description: 'Project timeline chart',
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
-    _dotsController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+    _dotsController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
     _dotsAnimation = IntTween(begin: 0, end: 3).animate(_dotsController);
-    _descController.addListener(() => setState(() => _descLength = _descController.text.length));
+    _descController.addListener(
+      () => setState(() => _descLength = _descController.text.length),
+    );
   }
 
   @override
@@ -80,7 +152,11 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   Future<void> _generate() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    setState(() { _isGenerating = true; _errorMessage = null; _pollingCount = 0; });
+    setState(() {
+      _isGenerating = true;
+      _errorMessage = null;
+      _pollingCount = 0;
+    });
 
     try {
       final diagram = await DiagramRepository().generateDiagram(
@@ -92,7 +168,11 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       _pendingDiagramId = diagram.id;
       _startPolling();
     } catch (e) {
-      setState(() { _isGenerating = false; _errorMessage = 'Failed to send request. Check your connection and try again.'; });
+      setState(() {
+        _isGenerating = false;
+        _errorMessage =
+            'Failed to send request. Check your connection and try again.';
+      });
     }
   }
 
@@ -102,17 +182,27 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       _pollingCount++;
       if (_pollingCount > _maxPollingAttempts) {
         _stopPolling();
-        setState(() { _isGenerating = false; _errorMessage = 'Generation took too long. Please try again.'; });
+        setState(() {
+          _isGenerating = false;
+          _errorMessage = 'Generation took too long. Please try again.';
+        });
         return;
       }
       try {
-        final diagram = await DiagramRepository().getDiagram(_pendingDiagramId!);
-        if (diagram.status == 'done' || diagram.status == 'completed' || diagram.isDone) {
+        final diagram = await DiagramRepository().getDiagram(
+          _pendingDiagramId!,
+        );
+        if (diagram.status == 'done' ||
+            diagram.status == 'completed' ||
+            diagram.isDone) {
           _stopPolling();
           if (mounted) Navigator.of(context).pop(diagram);
         } else if (diagram.status == 'failed' || diagram.isFailed) {
           _stopPolling();
-          setState(() { _isGenerating = false; _errorMessage = 'Failed to generate diagram. Please try again.'; });
+          setState(() {
+            _isGenerating = false;
+            _errorMessage = 'Failed to generate diagram. Please try again.';
+          });
         }
       } catch (_) {}
     });
@@ -126,7 +216,11 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
 
   void _cancelGeneration() {
     _stopPolling();
-    setState(() { _isGenerating = false; _errorMessage = null; _pollingCount = 0; });
+    setState(() {
+      _isGenerating = false;
+      _errorMessage = null;
+      _pollingCount = 0;
+    });
   }
 
   // ── Hints ──────────────────────────────────────────────────
@@ -161,6 +255,54 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           'The AI will pick the best diagram type',
           'More details = better diagram',
         ];
+      case 'usecase':
+        return [
+          'List the actors (users or systems)',
+          'Describe the main use cases or actions',
+          'Mention relationships between actors and use cases',
+          'Include any include or extend relationships',
+        ];
+      case 'activity':
+        return [
+          'Describe the flow of activities step by step',
+          'Mention decision points (if/else)',
+          'Include start and end points',
+          'Describe parallel activities if any',
+        ];
+      case 'sequence':
+        return [
+          'List the participants (objects or systems)',
+          'Describe the sequence of messages between them',
+          'Mention the order of interactions',
+          'Include return messages if needed',
+        ];
+      case 'context':
+        return [
+          'Describe the main system',
+          'List external entities that interact with it',
+          'Describe data flows between system and entities',
+        ];
+      case 'state':
+        return [
+          'List all possible states',
+          'Describe transitions between states',
+          'Mention triggers or events for each transition',
+          'Include initial and final states',
+        ];
+      case 'dfd':
+        return [
+          'List processes in your system',
+          'Describe data stores (databases)',
+          'Mention external entities',
+          'Describe data flows between them',
+        ];
+      case 'gantt':
+        return [
+          'List all tasks or phases',
+          'Mention duration for each task',
+          'Describe dependencies between tasks',
+          'Include start date or project timeline',
+        ];
       default:
         return [];
     }
@@ -176,6 +318,20 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         return 'Software Engineering main topics: Design Patterns, Testing, Deployment, Databases, and Security.';
       case 'auto':
         return 'I want to build a hospital management system with doctors, patients, appointments, and medical records.';
+      case 'usecase':
+        return 'A library system where Librarian can add books, manage members. Member can search books, borrow and return books.';
+      case 'activity':
+        return 'User login flow: start, enter credentials, validate, if valid go to dashboard, if invalid show error and retry.';
+      case 'sequence':
+        return 'User sends login request to AuthService, AuthService checks Database, Database returns result, AuthService returns token to User.';
+      case 'context':
+        return 'Online store system interacts with Customer, Payment Gateway, Supplier, and Shipping Service.';
+      case 'state':
+        return 'Order states: Created, Confirmed, Shipped, Delivered, Cancelled. Order moves from Created to Confirmed when payment is received.';
+      case 'dfd':
+        return 'Student submits assignment to System, System stores in Database, Teacher retrieves from Database, System sends notification to Student.';
+      case 'gantt':
+        return 'Project has 4 phases: Planning (2 weeks), Design (3 weeks), Development (8 weeks), Testing (2 weeks). Design starts after Planning.';
       default:
         return '';
     }
@@ -232,8 +388,13 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             TextFormField(
               controller: _nameController,
               style: const TextStyle(color: AppColors.textPrimary),
-              decoration: _inputDecoration(hint: 'e.g. User Authentication System', icon: Icons.label_outline_rounded),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a diagram name' : null,
+              decoration: _inputDecoration(
+                hint: 'e.g. User Authentication System',
+                icon: Icons.label_outline_rounded,
+              ),
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Enter a diagram name'
+                  : null,
             ),
             const SizedBox(height: AppSizes.md),
 
@@ -244,7 +405,9 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                 Text(
                   '$_descLength / 1000',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: _descLength > 900 ? Colors.redAccent : AppColors.textTertiary,
+                    color: _descLength > 900
+                        ? Colors.redAccent
+                        : AppColors.textTertiary,
                   ),
                 ),
               ],
@@ -255,12 +418,21 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
               style: const TextStyle(color: AppColors.textPrimary, height: 1.5),
               maxLines: 6,
               maxLength: 1000,
-              buildCounter: (_, {required currentLength, required isFocused, maxLength}) => const SizedBox.shrink(),
+              buildCounter:
+                  (
+                    _, {
+                    required currentLength,
+                    required isFocused,
+                    maxLength,
+                  }) => const SizedBox.shrink(),
               decoration: _inputDecoration(
-                hint: 'Describe the system or idea you want to turn into a diagram...',
+                hint:
+                    'Describe the system or idea you want to turn into a diagram...',
                 icon: Icons.notes_rounded,
               ),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter a description' : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? 'Enter a description'
+                  : null,
             ),
             const SizedBox(height: AppSizes.xl),
 
@@ -272,7 +444,9 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  ),
                   elevation: 0,
                 ),
                 child: Row(
@@ -280,7 +454,13 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                   children: [
                     const Icon(Icons.auto_awesome_rounded, size: 20),
                     const SizedBox(width: AppSizes.sm),
-                    Text('Generate Diagram', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+                    Text(
+                      'Generate Diagram',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -307,22 +487,53 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.surface,
+              color: isSelected
+                  ? AppColors.primary.withValues(alpha: 0.15)
+                  : AppColors.surface,
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-              border: Border.all(color: isSelected ? AppColors.primary : AppColors.border, width: isSelected ? 1.5 : 1),
+              border: Border.all(
+                color: isSelected ? AppColors.primary : AppColors.border,
+                width: isSelected ? 1.5 : 1,
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: AppSizes.xs),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.md,
+              vertical: AppSizes.xs,
+            ),
             child: Row(
               children: [
-                Icon(t.icon, size: AppSizes.iconSm, color: isSelected ? AppColors.primary : AppColors.textTertiary),
+                Icon(
+                  t.icon,
+                  size: AppSizes.iconSm,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textTertiary,
+                ),
                 const SizedBox(width: AppSizes.sm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(t.label, style: TextStyle(color: isSelected ? AppColors.primary : AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: AppSizes.fontSm)),
-                      Text(t.description, style: const TextStyle(color: AppColors.textTertiary, fontSize: AppSizes.fontXs), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(
+                        t.label,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppColors.primary
+                              : AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: AppSizes.fontSm,
+                        ),
+                      ),
+                      Text(
+                        t.description,
+                        style: const TextStyle(
+                          color: AppColors.textTertiary,
+                          fontSize: AppSizes.fontXs,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
@@ -351,25 +562,49 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         children: [
           Row(
             children: [
-              const Icon(Icons.tips_and_updates_rounded, size: 14, color: AppColors.primary),
+              const Icon(
+                Icons.tips_and_updates_rounded,
+                size: 14,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 6),
               const Text(
                 'What to include in your description:',
-                style: TextStyle(fontSize: AppSizes.fontSm, fontWeight: FontWeight.w600, color: AppColors.primary),
+                style: TextStyle(
+                  fontSize: AppSizes.fontSm,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSizes.sm),
-          ...hints.map((hint) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('• ', style: TextStyle(color: AppColors.primary, fontSize: AppSizes.fontSm)),
-                Expanded(child: Text(hint, style: const TextStyle(fontSize: AppSizes.fontSm, color: AppColors.textSecondary))),
-              ],
+          ...hints.map(
+            (hint) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '• ',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: AppSizes.fontSm,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      hint,
+                      style: const TextStyle(
+                        fontSize: AppSizes.fontSm,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          )),
+          ),
           const SizedBox(height: AppSizes.sm),
           Container(
             width: double.infinity,
@@ -381,11 +616,22 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Example:', style: TextStyle(fontSize: AppSizes.fontXs, fontWeight: FontWeight.w600, color: AppColors.textTertiary)),
+                const Text(
+                  'Example:',
+                  style: TextStyle(
+                    fontSize: AppSizes.fontXs,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   _getExample(_selectedType),
-                  style: const TextStyle(fontSize: AppSizes.fontXs, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+                  style: const TextStyle(
+                    fontSize: AppSizes.fontXs,
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ],
             ),
@@ -405,19 +651,30 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             ScaleTransition(
               scale: _pulseAnimation,
               child: Container(
-                width: 100, height: 100,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.primary.withValues(alpha: 0.12),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.4), width: 1.5),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    width: 1.5,
+                  ),
                 ),
-                child: const Icon(Icons.auto_awesome_rounded, size: 44, color: AppColors.primary),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 44,
+                  color: AppColors.primary,
+                ),
               ),
             ),
             const SizedBox(height: AppSizes.xl),
             AnimatedBuilder(
               animation: _dotsAnimation,
-              builder: (_, __) => Text('Generating${'.' * _dotsAnimation.value}', style: AppTextStyles.h3),
+              builder: (_, __) => Text(
+                'Generating${'.' * _dotsAnimation.value}',
+                style: AppTextStyles.h3,
+              ),
             ),
             const SizedBox(height: AppSizes.sm),
             Text(
@@ -428,17 +685,29 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             const SizedBox(height: AppSizes.sm),
             AnimatedBuilder(
               animation: _dotsController,
-              builder: (_, __) => Text('Attempt $_pollingCount / $_maxPollingAttempts', style: const TextStyle(color: AppColors.textTertiary, fontSize: AppSizes.fontXs)),
+              builder: (_, __) => Text(
+                'Attempt $_pollingCount / $_maxPollingAttempts',
+                style: const TextStyle(
+                  color: AppColors.textTertiary,
+                  fontSize: AppSizes.fontXs,
+                ),
+              ),
             ),
             const SizedBox(height: AppSizes.xxl),
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(backgroundColor: AppColors.surface, color: AppColors.primary, minHeight: 3),
+              child: LinearProgressIndicator(
+                backgroundColor: AppColors.surface,
+                color: AppColors.primary,
+                minHeight: 3,
+              ),
             ),
             const SizedBox(height: AppSizes.xl),
             TextButton(
               onPressed: _cancelGeneration,
-              style: TextButton.styleFrom(foregroundColor: AppColors.textTertiary),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textTertiary,
+              ),
               child: const Text('Cancel'),
             ),
           ],
@@ -449,7 +718,10 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
 
   Widget _buildErrorBanner() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: AppSizes.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md,
+        vertical: AppSizes.sm,
+      ),
       decoration: BoxDecoration(
         color: Colors.redAccent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -457,31 +729,75 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: AppSizes.iconSm),
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Colors.redAccent,
+            size: AppSizes.iconSm,
+          ),
           const SizedBox(width: AppSizes.sm),
-          Expanded(child: Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent, fontSize: AppSizes.fontSm))),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontSize: AppSizes.fontSm,
+              ),
+            ),
+          ),
           GestureDetector(
             onTap: () => setState(() => _errorMessage = null),
-            child: const Icon(Icons.close_rounded, color: Colors.redAccent, size: 18),
+            child: const Icon(
+              Icons.close_rounded,
+              color: Colors.redAccent,
+              size: 18,
+            ),
           ),
         ],
       ),
     );
   }
 
-  InputDecoration _inputDecoration({required String hint, required IconData icon}) {
+  InputDecoration _inputDecoration({
+    required String hint,
+    required IconData icon,
+  }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: AppSizes.fontSm),
-      prefixIcon: Icon(icon, color: AppColors.textTertiary, size: AppSizes.iconSm),
+      hintStyle: const TextStyle(
+        color: AppColors.textTertiary,
+        fontSize: AppSizes.fontSm,
+      ),
+      prefixIcon: Icon(
+        icon,
+        color: AppColors.textTertiary,
+        size: AppSizes.iconSm,
+      ),
       filled: true,
       fillColor: AppColors.surface,
-      contentPadding: const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: AppSizes.md),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd), borderSide: const BorderSide(color: AppColors.border)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd), borderSide: const BorderSide(color: AppColors.border)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd), borderSide: const BorderSide(color: Colors.redAccent, width: 1.5)),
-      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd), borderSide: const BorderSide(color: Colors.redAccent, width: 1.5)),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md,
+        vertical: AppSizes.md,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        borderSide: const BorderSide(color: AppColors.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      ),
     );
   }
 }

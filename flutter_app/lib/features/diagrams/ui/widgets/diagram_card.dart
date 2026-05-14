@@ -92,6 +92,20 @@ class DiagramCard extends StatelessWidget {
         return AppColors.diagramClass;
       case 'mindmap':
         return AppColors.diagramMindmap;
+      case 'usecase':
+        return const Color(0xFF0EA5E9);
+      case 'activity':
+        return const Color(0xFF8B5CF6);
+      case 'sequence':
+        return const Color(0xFFEC4899);
+      case 'context':
+        return const Color(0xFF14B8A6);
+      case 'state':
+        return const Color(0xFFF97316);
+      case 'dfd':
+        return const Color(0xFF84CC16);
+      case 'gantt':
+        return const Color(0xFFEAB308);
       default:
         return AppColors.diagramAuto;
     }
@@ -102,9 +116,23 @@ class DiagramCard extends StatelessWidget {
       case 'erd':
         return Icons.table_chart_rounded;
       case 'class':
-        return Icons.code_rounded;
-      case 'mindmap':
         return Icons.account_tree_rounded;
+      case 'mindmap':
+        return Icons.hub_rounded;
+      case 'usecase':
+        return Icons.person_rounded;
+      case 'activity':
+        return Icons.alt_route_rounded;
+      case 'sequence':
+        return Icons.swap_horiz_rounded;
+      case 'context':
+        return Icons.bubble_chart_rounded;
+      case 'state':
+        return Icons.stacked_line_chart_rounded;
+      case 'dfd':
+        return Icons.share_rounded;
+      case 'gantt':
+        return Icons.bar_chart_rounded;
       default:
         return Icons.auto_awesome_rounded;
     }

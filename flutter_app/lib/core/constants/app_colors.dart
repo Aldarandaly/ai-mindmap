@@ -12,7 +12,7 @@ class AppColors {
 
   // Background
   static const Color background = Color(0xFF0D1B2A);
-  static const Color surface = Color(0x1AFFFFFF);   // glassmorphism
+  static const Color surface = Color(0x1AFFFFFF);   
   static const Color surfaceDark = Color(0xFF0D1428);
 
   // Border
