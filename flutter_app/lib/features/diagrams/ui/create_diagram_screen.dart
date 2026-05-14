@@ -340,7 +340,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       appBar: _buildAppBar(),
       body: _isGenerating ? _buildGeneratingState() : _buildForm(),
     );
@@ -348,7 +348,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(

@@ -16,7 +16,7 @@ from app.prompts.state_prompt import get_state_prompt
 from app.prompts.dfd_prompt import get_dfd_prompt
 from app.prompts.gantt_prompt import get_gantt_prompt
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 

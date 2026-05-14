@@ -108,7 +108,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
       },
     });
 
-    const code = `$cleanCode`;
+    const code = \`$cleanCode\`;
 
     async function renderDiagram() {
       try {
@@ -147,7 +147,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
   void _showExportSheet() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFF1A1A24),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -192,9 +192,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
     try {
       Uint8List? image = _capturedImage;
       image ??= await _screenshotController.capture(pixelRatio: 2.0);
-
       if (image == null) throw Exception('Could not capture diagram');
-
       final dir = await getTemporaryDirectory();
       final file = File('${dir.path}/${widget.diagram.name}.png');
       await file.writeAsBytes(image);
@@ -215,12 +213,9 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
     try {
       Uint8List? image = _capturedImage;
       image ??= await _screenshotController.capture(pixelRatio: 2.0);
-
       if (image == null) throw Exception('Could not capture diagram');
-
       final pdf = pw.Document();
       final pdfImage = pw.MemoryImage(image);
-
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
@@ -228,21 +223,14 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
           build: (pw.Context context) => pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text(
-                widget.diagram.name,
-                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
-              ),
+              pw.Text(widget.diagram.name, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 10),
               pw.Center(child: pw.Image(pdfImage)),
             ],
           ),
         ),
       );
-
-      await Printing.sharePdf(
-        bytes: await pdf.save(),
-        filename: '${widget.diagram.name}.pdf',
-      );
+      await Printing.sharePdf(bytes: await pdf.save(), filename: '${widget.diagram.name}.pdf');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -261,7 +249,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent, // ← غيّرناه
       appBar: _buildAppBar(),
       body: _buildBody(),
       bottomNavigationBar: _buildBottomBar(),
@@ -270,7 +258,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent, // ← غيّرناه
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
@@ -291,10 +279,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
     if (widget.diagram.diagramCode == null || widget.diagram.diagramCode!.isEmpty) {
       return _buildNoCode();
     }
-
     return Column(
       children: [
-        // ── Status Banner ──
         AnimatedSize(
           duration: const Duration(milliseconds: 500),
           child: AnimatedOpacity(
@@ -308,7 +294,6 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
                 : const SizedBox.shrink(),
           ),
         ),
-        // ── Toggle ──
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Container(
@@ -326,7 +311,6 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        // ── Content ──
         Expanded(child: _showCode ? _buildCodeView() : _buildPreview()),
       ],
     );
@@ -342,15 +326,12 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
             if (_webViewLoading)
               Container(
                 color: AppColors.background,
-                child: const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                ),
+                child: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
               ),
           ],
         ),
       );
     }
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -359,29 +340,17 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
           children: [
             Container(
               width: 80, height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-              ),
+              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
               child: const Icon(Icons.auto_awesome_rounded, size: 36, color: AppColors.primary),
             ),
             const SizedBox(height: 16),
             Text('Diagram Ready', style: AppTextStyles.h3),
             const SizedBox(height: 8),
-            const Text(
-              'Visual preview is available on mobile.\nTap "Mermaid code" to view the code.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: AppSizes.fontSm, color: AppColors.textSecondary),
-            ),
+            const Text('Visual preview is available on mobile.\nTap "Mermaid code" to view the code.', textAlign: TextAlign.center, style: TextStyle(fontSize: AppSizes.fontSm, color: AppColors.textSecondary)),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => setState(() => _showCode = true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd))),
               icon: const Icon(Icons.code_rounded, size: 18),
               label: const Text('View Mermaid Code'),
             ),
@@ -420,11 +389,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-          border: Border.all(color: AppColors.border),
-        ),
+        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppSizes.radiusLg), border: Border.all(color: AppColors.border)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -434,13 +399,11 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
                 const Text('Mermaid Code', style: TextStyle(fontSize: AppSizes.fontSm, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
                 GestureDetector(
                   onTap: _copyCode,
-                  child: const Row(
-                    children: [
-                      Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
-                      SizedBox(width: 4),
-                      Text('Copy', style: TextStyle(fontSize: AppSizes.fontSm, color: AppColors.primary, fontWeight: FontWeight.w500)),
-                    ],
-                  ),
+                  child: const Row(children: [
+                    Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
+                    SizedBox(width: 4),
+                    Text('Copy', style: TextStyle(fontSize: AppSizes.fontSm, color: AppColors.primary, fontWeight: FontWeight.w500)),
+                  ]),
                 ),
               ],
             ),
@@ -486,9 +449,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
           color: isSelected ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(AppSizes.radiusRound),
         ),
-        child: Center(
-          child: Text(label, style: TextStyle(fontSize: AppSizes.fontSm, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : AppColors.textSecondary)),
-        ),
+        child: Center(child: Text(label, style: TextStyle(fontSize: AppSizes.fontSm, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : AppColors.textSecondary))),
       ),
     );
   }
@@ -505,12 +466,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: _isExporting ? null : _showExportSheet,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: AppColors.border),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-              ),
+              style: OutlinedButton.styleFrom(foregroundColor: AppColors.textPrimary, side: const BorderSide(color: AppColors.border), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd))),
               icon: _isExporting
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
                   : const Icon(Icons.download_rounded, size: 18),
@@ -521,13 +477,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen> {
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () => setState(() => _showCode = !_showCode),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd))),
               icon: Icon(_showCode ? Icons.visibility_rounded : Icons.code_rounded, size: 18),
               label: Text(_showCode ? 'Preview' : 'Code', style: const TextStyle(fontWeight: FontWeight.w600)),
             ),

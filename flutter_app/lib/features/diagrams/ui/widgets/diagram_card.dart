@@ -21,7 +21,7 @@ class DiagramCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(AppSizes.cardPadding),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: const Color(0xFF1A1A24),
           borderRadius: BorderRadius.circular(AppSizes.cardRadius),
         ),
         child: Row(

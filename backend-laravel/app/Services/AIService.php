@@ -8,7 +8,7 @@ class AIService
 {
     public function generateDiagram($text, $type = 'auto')
     {
-        $response = Http::post('http://127.0.0.1:8003/api/generate', [
+        $response = Http::timeout(120)->post('http://127.0.0.1:8003/api/generate', [
             'text' => $text,
             'type' => $type ?? 'auto',
             'mode' => 'generate',

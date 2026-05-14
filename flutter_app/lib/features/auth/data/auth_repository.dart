@@ -15,7 +15,9 @@ class AuthRepository {
         data: {'email': email, 'password': password},
       );
 
-      // Save token automatically
+      final token = response['token'] as String?;
+      if (token != null) await _client.saveToken(token);
+
       final name = response['user']?['name'] as String?;
       if (name != null) await _client.saveUserName(name);
 
