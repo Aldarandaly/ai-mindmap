@@ -4,14 +4,14 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../data/projects_model.dart';
 
 class ProjectCard extends StatelessWidget {
-  final ProjectModel project;
+  final Project project;
   final VoidCallback onTap;
 
   const ProjectCard({
-    super.key,
-    required this.project,
-    required this.onTap,
-  });
+  super.key,
+  required this.project,      
+  required this.onTap,
+});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class ProjectCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: Colors.white.withValues(alpha: 0.07),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -67,9 +67,9 @@ class ProjectCard extends StatelessWidget {
                   const SizedBox(height: 4),
 
                   // Description
-                  if (project.description.isNotEmpty) ...[
+                  if ((project.description ?? '').isNotEmpty) ...[
                     Text(
-                      project.description,
+                      project.description ?? '',
                       style: AppTextStyles.bodySmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

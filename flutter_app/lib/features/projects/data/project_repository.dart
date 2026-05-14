@@ -10,7 +10,7 @@ class ProjectRepository {
       final List data = response is List ? response : response['data'] ?? [];
       return {
         'success': true,
-        'data': data.map((e) => ProjectModel.fromJson(e)).toList(),
+        'data': data.map((e) => Project.fromJson(e)).toList(),
       };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
@@ -23,7 +23,7 @@ class ProjectRepository {
       final projectData = response is Map ? response['data'] ?? response : response;
       return {
         'success': true,
-        'data': ProjectModel.fromJson(projectData),
+        'data': Project.fromJson(projectData),
       };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
@@ -35,7 +35,7 @@ class ProjectRepository {
       final response = await _client.get('/projects/$id');
       return {
         'success': true,
-        'data': ProjectModel.fromJson(response['data'] ?? response),
+        'data': Project.fromJson(response['data'] ?? response),
       };
     } catch (e) {
       return {'success': false, 'message': e.toString()};
