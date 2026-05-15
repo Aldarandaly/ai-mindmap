@@ -2,32 +2,52 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_text_styles.dart';
-import '../../../core/network/api_exception.dart';
 import '../../projects/data/projects_model.dart';
 import '../data/diagram_model.dart';
 import '../data/diagram_repository.dart';
 import 'widgets/diagram_card.dart';
 import 'create_diagram_screen.dart';
 import 'diagram_viewer_screen.dart';
+import '../../chat/ui/chat_screen.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final ProjectModel project;
-  const ProjectDetailScreen({super.key, required this.project});
+
+  const ProjectDetailScreen({
+    super.key,
+    required this.project,
+  });
 
   @override
-  State<ProjectDetailScreen> createState() => _ProjectDetailScreenState();
+  State<ProjectDetailScreen> createState() =>
+      _ProjectDetailScreenState();
 }
 
-class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
+class _ProjectDetailScreenState
+    extends State<ProjectDetailScreen> {
   final _repo = DiagramRepository();
 
   List<Diagram> _diagrams = [];
   List<Diagram> _filtered = [];
+
   bool _isLoading = true;
   String? _error;
+
   String _selectedType = 'all';
 
-  final _types = ['all', 'erd', 'class', 'mindmap'];
+  final _types = [
+    'all',
+    'erd',
+    'class',
+    'mindmap',
+    'usecase',
+    'activity',
+    'sequence',
+    'context',
+    'state',
+    'dfd',
+    'gantt',
+  ];
 
   @override
   void initState() {
@@ -41,12 +61,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       _error = null;
     });
 
-    final result = await _repo.getDiagrams(widget.project.id);
+    final result =
+        await _repo.getDiagrams(widget.project.id);
 
     if (result['success']) {
       setState(() {
-        _diagrams = List<Diagram>.from(result['data']);
+        _diagrams =
+            List<Diagram>.from(result['data']);
+
         _filterDiagrams();
+
         _isLoading = false;
       });
     } else {
@@ -61,7 +85,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     setState(() {
       _filtered = _selectedType == 'all'
           ? _diagrams
-          : _diagrams.where((d) => d.type == _selectedType).toList();
+          : _diagrams
+              .where(
+                (d) => d.type == _selectedType,
+              )
+              .toList();
     });
   }
 
@@ -74,34 +102,52 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final result = await Navigator.push<Diagram>(
       context,
       MaterialPageRoute(
-        builder: (_) => CreateDiagramScreen(project: widget.project),
+        builder: (_) => CreateDiagramScreen(
+          project: widget.project,
+        ),
       ),
     );
+
     if (result != null) {
       setState(() {
         _diagrams.insert(0, result);
         _filterDiagrams();
       });
+
       if (mounted) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => DiagramViewerScreen(diagram: result),
+            builder: (_) =>
+                DiagramViewerScreen(diagram: result),
           ),
         );
       }
     }
   }
 
+  // OPEN AI CHAT
+  void _openChat() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ChatScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
-            // ── Header ──────────────────────────────────
+
+            // HEADER
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.screenPadding,
@@ -109,32 +155,52 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 AppSizes.screenPadding,
                 0,
               ),
+
               child: Row(
                 children: [
+
+                  // BACK BUTTON
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () =>
+                        Navigator.pop(context),
+
                     icon: const Icon(
                       Icons.arrow_back_ios_new,
                       size: AppSizes.iconSm,
                       color: AppColors.textPrimary,
                     ),
+
                     padding: EdgeInsets.zero,
                   ),
-                  const SizedBox(width: AppSizes.sm),
+
+                  const SizedBox(
+                    width: AppSizes.sm,
+                  ),
+
+                  // PROJECT INFO
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+
                       children: [
                         Text(
                           widget.project.name,
+
                           style: AppTextStyles.h3,
+
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+
+                          overflow:
+                              TextOverflow.ellipsis,
                         ),
+
                         Text(
                           '${_diagrams.length} diagram${_diagrams.length == 1 ? '' : 's'}'
                           ' · ${widget.project.updatedAtLabel}',
-                          style: AppTextStyles.labelSmall,
+
+                          style:
+                              AppTextStyles.labelSmall,
                         ),
                       ],
                     ),
@@ -143,54 +209,86 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               ),
             ),
 
-            const SizedBox(height: AppSizes.md),
+            const SizedBox(
+              height: AppSizes.md,
+            ),
 
-            // ── Filter Chips ─────────────────────────────
+            // FILTER CHIPS
             SizedBox(
               height: 36,
+
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.screenPadding,
+
+                padding:
+                    const EdgeInsets.symmetric(
+                  horizontal:
+                      AppSizes.screenPadding,
                 ),
+
                 children: _types.map((type) {
-                  final isSelected = _selectedType == type;
+                  final isSelected =
+                      _selectedType == type;
+
                   final label = type == 'all'
                       ? 'All'
                       : type == 'mindmap'
-                      ? 'Mind Map'
-                      : type.toUpperCase();
+                          ? 'Mind Map'
+                          : type.toUpperCase();
+
                   return Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding:
+                        const EdgeInsets.only(
+                      right: 8,
+                    ),
+
                     child: GestureDetector(
-                      onTap: () => _onTypeSelected(type),
+                      onTap: () =>
+                          _onTypeSelected(type),
+
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
+                        duration:
+                            const Duration(
+                          milliseconds: 200,
+                        ),
+
+                        padding:
+                            const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 6,
                         ),
+
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
                               : AppColors.surface,
-                          borderRadius: BorderRadius.circular(
+
+                          borderRadius:
+                              BorderRadius.circular(
                             AppSizes.radiusRound,
                           ),
+
                           border: Border.all(
                             color: isSelected
                                 ? AppColors.primary
                                 : AppColors.border,
                           ),
                         ),
+
                         child: Text(
                           label,
+
                           style: TextStyle(
-                            fontSize: AppSizes.fontSm,
-                            fontWeight: FontWeight.w500,
+                            fontSize:
+                                AppSizes.fontSm,
+
+                            fontWeight:
+                                FontWeight.w500,
+
                             color: isSelected
                                 ? Colors.white
-                                : AppColors.textSecondary,
+                                : AppColors
+                                    .textSecondary,
                           ),
                         ),
                       ),
@@ -200,67 +298,79 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               ),
             ),
 
-            const SizedBox(height: AppSizes.md),
+            const SizedBox(
+              height: AppSizes.md,
+            ),
 
-            // ── Body ─────────────────────────────────────
+            // BODY
             Expanded(
               child: _isLoading
                   ? _buildLoading()
                   : _error != null
-                  ? _buildError()
-                  : _filtered.isEmpty
-                  ? _buildEmpty()
-                  : _buildList(),
+                      ? _buildError()
+                      : _filtered.isEmpty
+                          ? _buildEmpty()
+                          : _buildList(),
             ),
           ],
         ),
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _goToCreateDiagram,
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'New diagram',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoading() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
-      itemCount: 3,
-      itemBuilder: (_, __) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        height: 80,
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppSizes.cardRadius),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildError() {
-    return Center(
-      child: Column(
+      // FLOATING BUTTONS
+      floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment:
+            CrossAxisAlignment.end,
+
         children: [
-          const Icon(
-            Icons.wifi_off_rounded,
-            size: 48,
-            color: AppColors.textTertiary,
+
+          // AI CHAT BUTTON
+          FloatingActionButton.extended(
+            heroTag: "chat",
+
+            backgroundColor:
+                Colors.deepPurple,
+
+            onPressed: _openChat,
+
+            icon: const Icon(
+              Icons.auto_awesome,
+              color: Colors.white,
+            ),
+
+            label: const Text(
+              "AI Chat",
+
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          const SizedBox(height: AppSizes.md),
-          Text(_error!, style: AppTextStyles.bodyMedium),
-          const SizedBox(height: AppSizes.md),
-          TextButton(
-            onPressed: _loadDiagrams,
-            child: const Text(
-              'Try again',
-              style: TextStyle(color: AppColors.primary),
+
+          const SizedBox(height: 12),
+
+          // NEW DIAGRAM BUTTON
+          FloatingActionButton.extended(
+            heroTag: "diagram",
+
+            onPressed: _goToCreateDiagram,
+
+            backgroundColor:
+                AppColors.primary,
+
+            icon: const Icon(
+              Icons.add,
+              color: Colors.white,
+            ),
+
+            label: const Text(
+              'New Diagram',
+
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -268,36 +378,109 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
+  // LOADING
+  Widget _buildLoading() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.screenPadding,
+      ),
+
+      itemCount: 3,
+
+      itemBuilder: (_, __) => Container(
+        margin: const EdgeInsets.only(
+          bottom: 12,
+        ),
+
+        height: 80,
+
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+
+          borderRadius: BorderRadius.circular(
+            AppSizes.cardRadius,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ERROR
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+
+        children: [
+          const Icon(
+            Icons.wifi_off_rounded,
+            size: 48,
+            color: AppColors.textTertiary,
+          ),
+
+          const SizedBox(
+            height: AppSizes.md,
+          ),
+
+          Text(
+            _error!,
+            style: AppTextStyles.bodyMedium,
+          ),
+
+          const SizedBox(
+            height: AppSizes.md,
+          ),
+
+          TextButton(
+            onPressed: _loadDiagrams,
+
+            child: const Text(
+              'Try again',
+
+              style: TextStyle(
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // EMPTY
   Widget _buildEmpty() {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-            ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              size: 36,
-              color: AppColors.textTertiary,
-            ),
+
+        children: const [
+          Icon(
+            Icons.auto_awesome_rounded,
+            size: 60,
+            color: AppColors.textTertiary,
           ),
-          const SizedBox(height: AppSizes.lg),
-          const Text(
+
+          SizedBox(
+            height: AppSizes.lg,
+          ),
+
+          Text(
             'No diagrams yet',
+
             style: TextStyle(
               fontSize: AppSizes.fontXl,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: AppSizes.xs),
-          const Text(
+
+          SizedBox(
+            height: AppSizes.xs,
+          ),
+
+          Text(
             'Generate your first diagram',
+
             style: TextStyle(
               fontSize: AppSizes.fontMd,
               color: AppColors.textSecondary,
@@ -308,23 +491,33 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     );
   }
 
+  // LIST
   Widget _buildList() {
     return RefreshIndicator(
       onRefresh: _loadDiagrams,
+
       color: AppColors.primary,
+
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSizes.screenPadding,
           vertical: AppSizes.sm,
         ),
+
         itemCount: _filtered.length,
+
         itemBuilder: (_, i) => DiagramCard(
           diagram: _filtered[i],
+
           onTap: () {
             Navigator.push(
               context,
+
               MaterialPageRoute(
-                builder: (_) => DiagramViewerScreen(diagram: _filtered[i]),
+                builder: (_) =>
+                    DiagramViewerScreen(
+                  diagram: _filtered[i],
+                ),
               ),
             );
           },
