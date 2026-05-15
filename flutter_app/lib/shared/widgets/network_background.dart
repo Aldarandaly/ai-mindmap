@@ -20,13 +20,11 @@ class _BgPainter extends CustomPainter {
     final w = size.width, h = size.height;
     final rect = Rect.fromLTWH(0, 0, w, h);
 
-    // 🔆 lighter base
     canvas.drawRect(
       rect,
-      Paint()..color = const Color.fromARGB(255, 19, 19, 32),
+      Paint()..color = const Color.fromARGB(255, 26, 26, 46),
     );
 
-    // Orb 1 — softer purple
     canvas.drawRect(
       rect,
       Paint()
@@ -34,13 +32,12 @@ class _BgPainter extends CustomPainter {
           center: const Alignment(-0.70, -0.80),
           radius: 1.1,
           colors: [
-            const Color.fromARGB(255, 153, 142, 255).withOpacity(0.14),
+            const Color.fromARGB(255, 153, 142, 255).withOpacity(0.22),
             Colors.transparent,
           ],
         ).createShader(rect),
     );
 
-    // Orb 2 — softer violet
     canvas.drawRect(
       rect,
       Paint()
@@ -48,13 +45,12 @@ class _BgPainter extends CustomPainter {
           center: const Alignment(0.76, 0.70),
           radius: 0.9,
           colors: [
-            const Color.fromARGB(255, 172, 145, 255).withOpacity(0.10),
+            const Color.fromARGB(255, 172, 145, 255).withOpacity(0.18),
             Colors.transparent,
           ],
         ).createShader(rect),
     );
 
-    // 🌤 Orb 3 — softer blue
     canvas.drawRect(
       rect,
       Paint()
@@ -62,15 +58,14 @@ class _BgPainter extends CustomPainter {
           center: const Alignment(0.80, -0.70),
           radius: 0.8,
           colors: [
-            const Color.fromARGB(255, 109, 167, 255).withOpacity(0.08),
+            const Color.fromARGB(255, 109, 167, 255).withOpacity(0.15),
             Colors.transparent,
           ],
         ).createShader(rect),
     );
 
-    // dots lighter
     final dotPaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withOpacity(0.10);
+      ..color = const Color(0xFFFFFFFF).withOpacity(0.18);
 
     final dotPositions = [
       Offset(0.12 * w, 0.18 * h),
@@ -87,6 +82,26 @@ class _BgPainter extends CustomPainter {
       Offset(0.11 * w, 0.19 * h),
       Offset(0.39 * w, 0.80 * h),
       Offset(0.03 * w, 0.42 * h),
+      Offset(0.20 * w, 0.35 * h),
+      Offset(0.47 * w, 0.28 * h),
+      Offset(0.73 * w, 0.40 * h),
+      Offset(0.60 * w, 0.55 * h),
+      Offset(0.30 * w, 0.60 * h),
+      Offset(0.15 * w, 0.50 * h),
+      Offset(0.85 * w, 0.10 * h),
+      Offset(0.70 * w, 0.25 * h),
+      Offset(0.50 * w, 0.45 * h),
+      Offset(0.22 * w, 0.72 * h),
+      Offset(0.65 * w, 0.72 * h),
+      Offset(0.44 * w, 0.65 * h),
+      Offset(0.08 * w, 0.88 * h),
+      Offset(0.78 * w, 0.60 * h),
+      Offset(0.33 * w, 0.45 * h),
+      Offset(0.57 * w, 0.33 * h),
+      Offset(0.90 * w, 0.38 * h),
+      Offset(0.18 * w, 0.05 * h),
+      Offset(0.95 * w, 0.75 * h),
+      Offset(0.42 * w, 0.95 * h),
     ];
 
     for (final dot in dotPositions) {
