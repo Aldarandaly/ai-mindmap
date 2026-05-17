@@ -17,15 +17,12 @@ class CreateDiagramScreen extends StatefulWidget {
 
 class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     with TickerProviderStateMixin {
-  // Page controller
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  // State
   String? _selectedType;
   bool _isGenerating = false;
   bool _hasError = false;
@@ -34,18 +31,113 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   int _descriptionLength = 0;
   static const int _maxDescriptionLength = 1000;
 
-  // Animation controllers
   late AnimationController _pulseController;
   late AnimationController _progressController;
   late AnimationController _errorSlideController;
   late Animation<double> _pulseAnimation;
+  late Animation<double> _progressAnimation;
+  late Animation<Offset> _errorSlideAnimation;
 
+  final _repo = DiagramRepository();
+
+  final List<Map<String, dynamic>> _diagramTypes = [
+    {
+      'type': 'erd',
+      'label': 'ERD',
+      'desc': 'Entity Relationship Diagram',
+      'icon': Icons.storage_rounded,
+    },
+    {
+      'type': 'class',
+      'label': 'Class',
+      'desc': 'Class Diagram',
+      'icon': Icons.code_rounded,
+    },
+    {
+      'type': 'mindmap',
+      'label': 'Mind Map',
+      'desc': 'Mind Map Diagram',
+      'icon': Icons.hub_rounded,
+    },
+    {
+      'type': 'usecase',
+      'label': 'Use Case',
+      'desc': 'Use Case Diagram',
+      'icon': Icons.person_rounded,
+    },
+    {
+      'type': 'sequence',
+      'label': 'Sequence',
+      'desc': 'Sequence Diagram',
+      'icon': Icons.swap_horiz_rounded,
+    },
+    {
+      'type': 'activity',
+      'label': 'Activity',
+      'desc': 'Activity Diagram',
+      'icon': Icons.alt_route_rounded,
+    },
+    {
+      'type': 'context',
+      'label': 'Context',
+      'desc': 'Context Diagram',
+      'icon': Icons.language_rounded,
+    },
+    {
+      'type': 'state',
+      'label': 'State',
+      'desc': 'State Diagram',
+      'icon': Icons.timeline_rounded,
+    },
+    {
+      'type': 'dfd',
+      'label': 'DFD',
+      'desc': 'Data Flow Diagram',
+      'icon': Icons.account_tree_rounded,
+    },
+    {
+      'type': 'gantt',
+      'label': 'Gantt',
+      'desc': 'Gantt Chart',
+      'icon': Icons.bar_chart_rounded,
+    },
   ];
 
   @override
   void initState() {
     super.initState();
 
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 30),
+    );
+
+    _errorSlideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+    );
+
+    _errorSlideAnimation =
+        Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+          CurvedAnimation(parent: _errorSlideController, curve: Curves.easeOut),
+        );
+
+    _descriptionController.addListener(() {
+      setState(() => _descriptionLength = _descriptionController.text.length);
+    });
   }
 
   @override
@@ -59,31 +151,90 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     super.dispose();
   }
 
+  void _goToPage(int page) {
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+    );
+  }
 
+  void _onBack() {
+    if (_currentPage == 1) {
+      _goToPage(0);
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _onNext() {
+    if (_selectedType == null) {
+      _showSnack('Please select a diagram type');
+      return;
     }
     _goToPage(1);
   }
 
-
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   // ─── Generate ─────────────────────────────────────────────────────────────
 
   Future<void> _generate() async {
-  if (_nameController.text.trim().isEmpty) {
-    _showSnack('Please enter a diagram name');
-    return;
-  }
-  if (_descriptionController.text.trim().isEmpty) {
-    _showSnack('Please describe what you want to generate');
-    return;
-  }
+    if (_nameController.text.trim().isEmpty) {
+      _showSnack('Please enter a diagram name');
+      return;
+    }
+    if (_descriptionController.text.trim().isEmpty) {
+      _showSnack('Please describe what you want to generate');
+      return;
+    }
 
+    setState(() {
+      _isGenerating = true;
+      _hasError = false;
+      _generatingProgress = 0.0;
+    });
 
-  }
-}
+    _progressController.forward(from: 0);
 
+    try {
+      final diagram = await _repo.generateDiagram(
+        projectId: widget.projectId,
+        name: _nameController.text.trim(),
+        type: _selectedType!,
+        description: _descriptionController.text.trim(),
+      );
 
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => DiagramViewerScreen(diagram: diagram),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isGenerating = false;
+        _hasError = true;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+      _errorSlideController.forward(from: 0);
+      _progressController.stop();
+    }
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────
@@ -91,7 +242,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           SafeArea(
@@ -105,7 +256,8 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                       : PageView(
                           controller: _pageController,
                           physics: const NeverScrollableScrollPhysics(),
-                          onPageChanged: (i) => setState(() => _currentPage = i),
+                          onPageChanged: (i) =>
+                              setState(() => _currentPage = i),
                           children: [
                             _buildPage1TypeSelector(),
                             _buildPage2DescribeForm(),
@@ -149,7 +301,11 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                 color: Colors.white.withValues(alpha: 0.08),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
               ),
-              child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+              child: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
           ),
           const SizedBox(width: AppSizes.md),
@@ -167,21 +323,6 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             ),
           ),
         ],
-      backgroundColor: Colors.transparent,
-      appBar: _buildAppBar(),
-      body: _isGenerating ? _buildGeneratingState() : _buildForm(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-        color: AppColors.textPrimary,
-        onPressed: _isGenerating ? null : () => Navigator.of(context).pop(),
       ),
     );
   }
@@ -216,7 +357,9 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: isActive
-                ? const LinearGradient(colors: [AppColors.primary, AppColors.accent])
+                ? const LinearGradient(
+                    colors: [AppColors.primary, AppColors.accent],
+                  )
                 : null,
             color: isActive ? null : Colors.white.withValues(alpha: 0.08),
             border: Border.all(
@@ -258,7 +401,9 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(1),
             gradient: isActive
-                ? const LinearGradient(colors: [AppColors.primary, AppColors.accent])
+                ? const LinearGradient(
+                    colors: [AppColors.primary, AppColors.accent],
+                  )
                 : null,
             color: isActive ? null : Colors.white.withValues(alpha: 0.12),
           ),
@@ -267,7 +412,15 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
+  // ─── Page 1: Type Selector ────────────────────────────────────────────────
 
+  Widget _buildPage1TypeSelector() {
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.screenPadding,
             ),
             itemCount: _diagramTypes.length,
             itemBuilder: (context, index) {
@@ -289,10 +442,71 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-
+  Widget _buildTypeCard(Map<String, dynamic> item, bool isSelected) {
+    return GestureDetector(
+      onTap: () => setState(() => _selectedType = item['type']),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(AppSizes.md),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary.withValues(alpha: 0.6)
+                : Colors.white.withValues(alpha: 0.10),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.20)
+                    : Colors.white.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              ),
+              child: Icon(
+                item['icon'] as IconData,
+                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: AppSizes.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['label'] as String,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isSelected
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    item['desc'] as String,
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 16),
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
           ],
         ),
       ),
@@ -301,19 +515,12 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
 
   // ─── Page 2: Describe Form ────────────────────────────────────────────────
 
-
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSizes.lg),
-          ],
-
+  Widget _buildPage2DescribeForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSizes.screenPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           _buildGuideBox(),
           const SizedBox(height: AppSizes.lg),
 
@@ -338,7 +545,13 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: AppTextStyles.bodyMedium.copyWith(
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 
@@ -350,33 +563,29 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.30)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.sm),
-
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSizes.sm),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 6),
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+              color: AppColors.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             ),
-
+            child: const Icon(
+              Icons.lightbulb_outline_rounded,
+              color: AppColors.primary,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              'Be specific! The more detail you provide, the better the generated diagram.',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -390,11 +599,16 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
       decoration: InputDecoration(
         hintText: 'e.g. E-Commerce ERD',
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textTertiary,
+        ),
         fillColor: Colors.white.withValues(alpha: 0.08),
         filled: true,
-        prefixIcon: Icon(Icons.drive_file_rename_outline_rounded,
-            color: AppColors.textTertiary, size: 20),
+        prefixIcon: Icon(
+          Icons.drive_file_rename_outline_rounded,
+          color: AppColors.textTertiary,
+          size: 20,
+        ),
         border: OutlineInputBorder(
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
           borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -408,7 +622,9 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         ),
         contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSizes.md, vertical: AppSizes.md),
+          horizontal: AppSizes.md,
+          vertical: AppSizes.md,
+        ),
       ),
     );
   }
@@ -421,24 +637,34 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           controller: _descriptionController,
           maxLines: 6,
           maxLength: _maxDescriptionLength,
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textPrimary,
+          ),
           decoration: InputDecoration(
             hintText: 'Describe the diagram you want to generate in detail...',
-            hintStyle:
-                AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
+            hintStyle: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textTertiary,
+            ),
             fillColor: Colors.white.withValues(alpha: 0.08),
             filled: true,
             counterText: '',
             border: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.15),
+              ),
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             ),
             enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.15),
+              ),
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             ),
             contentPadding: const EdgeInsets.all(AppSizes.md),
@@ -489,8 +715,10 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (leadingSymbol != null) ...[
-              Text(leadingSymbol,
-                  style: const TextStyle(color: Colors.white, fontSize: 16)),
+              Text(
+                leadingSymbol,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
               const SizedBox(width: AppSizes.sm),
             ],
             Text(
@@ -520,18 +748,72 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
+            ScaleTransition(
+              scale: _pulseAnimation,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.accent],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusXl),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.5),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.white,
+                  size: 44,
                 ),
               ),
             ),
             const SizedBox(height: AppSizes.xl),
-
             Text(
               'Generating your diagram...',
-              style: AppTextStyles.headingSmall.copyWith(color: AppColors.textPrimary),
+              style: AppTextStyles.headingSmall.copyWith(
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: AppSizes.sm),
-
+            Text(
+              'This may take a few seconds',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSizes.xl),
+            AnimatedBuilder(
+              animation: _progressAnimation,
+              builder: (_, __) => Column(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                    child: LinearProgressIndicator(
+                      value: _progressAnimation.value,
+                      minHeight: 6,
+                      backgroundColor: Colors.white.withValues(alpha: 0.10),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+                  Text(
+                    '${(_progressAnimation.value * 100).toInt()}%',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -542,13 +824,51 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   // ─── Error Banner ─────────────────────────────────────────────────────────
 
   Widget _buildErrorBanner() {
-
+    return SlideTransition(
+      position: _errorSlideAnimation,
+      child: Container(
+        margin: const EdgeInsets.all(AppSizes.md),
+        padding: const EdgeInsets.all(AppSizes.md),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.error,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: AppSizes.sm),
+            Expanded(
+              child: Text(
+                _errorMessage,
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () => setState(() => _hasError = false),
+              child: Icon(
+                Icons.close_rounded,
+                size: 18,
+                color: AppColors.error.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
       ),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-
+    );
+  }
+}

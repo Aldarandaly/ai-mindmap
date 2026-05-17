@@ -50,7 +50,10 @@ class _RecentScreenState extends State<RecentScreen>
 
   @override
   Widget build(BuildContext context) {
-
+    super.build(context);
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -127,8 +130,7 @@ class _RecentScreenState extends State<RecentScreen>
               height: 72,
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.10),
-                borderRadius:
-                    BorderRadius.circular(AppSizes.radiusXl),
+                borderRadius: BorderRadius.circular(AppSizes.radiusXl),
               ),
               child: const Icon(Icons.wifi_off_rounded,
                   size: 34, color: AppColors.error),
@@ -151,8 +153,8 @@ class _RecentScreenState extends State<RecentScreen>
                   gradient: const LinearGradient(
                     colors: [AppColors.primary, AppColors.accent],
                   ),
-                  borderRadius: BorderRadius.circular(
-                      AppSizes.radiusRound),
+                  borderRadius:
+                      BorderRadius.circular(AppSizes.radiusRound),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.primary.withValues(alpha: 0.4),
@@ -188,8 +190,7 @@ class _RecentScreenState extends State<RecentScreen>
             height: 80,
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.10),
-              borderRadius:
-                  BorderRadius.circular(AppSizes.radiusXl),
+              borderRadius: BorderRadius.circular(AppSizes.radiusXl),
               border: Border.all(
                   color: AppColors.primary.withValues(alpha: 0.22)),
             ),
@@ -233,12 +234,11 @@ class _RecentScreenState extends State<RecentScreen>
         itemCount: _diagrams.length,
         itemBuilder: (_, i) => DiagramCard(
           diagram: _diagrams[i],
-          index: i, // ← لازم تضيف index للـ DiagramCard
+          index: i,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  DiagramViewerScreen(diagram: _diagrams[i]),
+              builder: (_) => DiagramViewerScreen(diagram: _diagrams[i]),
             ),
           ),
         ),
@@ -282,8 +282,7 @@ class _ShimmerCardState extends State<_ShimmerCard>
         height: 80,
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          borderRadius:
-              BorderRadius.circular(AppSizes.cardRadius),
+          borderRadius: BorderRadius.circular(AppSizes.cardRadius),
           gradient: LinearGradient(
             begin: Alignment(-1.5 + _ctrl.value * 3.5, 0),
             end: Alignment(-0.5 + _ctrl.value * 3.5, 0),

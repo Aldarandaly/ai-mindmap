@@ -1,29 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_text_styles.dart';
 import '../../../core/network/api_client.dart';
-import '../../../shared/widgets/network_background.dart';
 import '../../diagrams/ui/project_detail_screen.dart';
 import '../data/project_repository.dart';
 import '../data/projects_model.dart';
 import 'widgets/create_project_modal.dart';
+import '../../../core/constants/app_sizes.dart';
+import 'dart:ui';
 
 String _initials = '';
+String _userName = "";
+
 final _apiClient = ApiClient();
 
-// ── Gradient pairs for project cards ─────────────────────────────────────────
-const _gradients = [
+const List<List<Color>> _gradients = [
   [Color(0xFF6C63FF), Color(0xFF9B59B6)],
-  [Color(0xFF00D4FF), Color(0xFF6C63FF)],
-  [Color(0xFF9B59B6), Color(0xFF00D4FF)],
-  [Color(0xFF6C63FF), Color(0xFF00D4FF)],
-  [Color(0xFF00D4FF), Color(0xFF9B59B6)],
+  [Color(0xFF3B82F6), Color(0xFF6C63FF)],
+  [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+  [Color(0xFF06B6D4), Color(0xFF3B82F6)],
+  [Color(0xFF10B981), Color(0xFF06B6D4)],
 ];
 
 class ProjectsBody extends StatefulWidget {
   final void Function(VoidCallback)? onRegisterShowModal;
+
   const ProjectsBody({super.key, this.onRegisterShowModal});
 
   @override
@@ -35,6 +36,9 @@ class _ProjectsBodyState extends State<ProjectsBody>
   final _repo = ProjectRepository();
   final _searchController = TextEditingController();
 
+  List<Project> _projects = [];
+  List<Project> _filtered = [];
+
   bool _isLoading = true;
   String? _error;
 
@@ -44,6 +48,7 @@ class _ProjectsBodyState extends State<ProjectsBody>
   @override
   void initState() {
     super.initState();
+
     widget.onRegisterShowModal?.call(_showCreateModal);
     _init();
     _searchController.addListener(_onSearch);
@@ -62,51 +67,126 @@ class _ProjectsBodyState extends State<ProjectsBody>
 
   void _onSearch() {
     final q = _searchController.text.toLowerCase();
-    setState(() {
 
+    setState(() {
+      _filtered = q.isEmpty
+          ? _projects
+          : _projects.where((p) {
+              return p.name.toLowerCase().contains(q) ||
+                  (p.description ?? '').toLowerCase().contains(q);
+            }).toList();
     });
   }
 
   Future<void> _loadProjects() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
+    final result = await _repo.getProjects();
+
+    if (result['success']) {
+      setState(() {
+        _projects = List<Project>.from(result['data']);
+        _filtered = _projects;
+        _isLoading = false;
+      });
     } else {
-      setState(() { _error = result['message']; _isLoading = false; });
+      setState(() {
+        _error = result['message'];
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _loadInitials() async {
     final name = await _apiClient.getUserName();
+
     if (name != null && name.isNotEmpty) {
-      setState(() => _initials = name[0].toUpperCase());
+      setState(() {
+        _userName = name;
+        _initials = name[0].toUpperCase();
+      });
     }
   }
 
   void _showCreateModal() {
+    HapticFeedback.mediumImpact();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-
-          },
-        ),
+      builder: (_) => CreateProjectModal(
+        onCreated: (project) {
+          setState(() {
+            _projects.insert(0, project);
+            _filtered = _projects;
+          });
+        },
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
 
-            ),
-          ],
-        ),
+    return SafeArea(
+      child: Column(
+        children: [
+          _buildHeader(),
+          const SizedBox(height: 14),
+          _buildSearch(),
+          const SizedBox(height: 14),
+
+          Expanded(
+            child: _isLoading
+                ? _buildLoading()
+                : _error != null
+                ? _buildError()
+                : _filtered.isEmpty
+                ? _buildEmpty()
+                : _buildProjects(),
+          ),
+        ],
       ),
     );
   }
 
-
+  // ───────────────────────── HEADER
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.screenPadding,
+        AppSizes.lg,
+        AppSizes.screenPadding,
+        AppSizes.md,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Projects',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
+                const SizedBox(height: 2),
+                if (!_isLoading && _error == null)
+                  Text(
+                    'This is your workshop',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -116,79 +196,216 @@ class _ProjectsBodyState extends State<ProjectsBody>
     );
   }
 
+  // ───────────────────────── SEARCH
+  Widget _buildSearch() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: TextField(
+          controller: _searchController,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: 'Search projects...',
+            prefixIcon: const Icon(Icons.search, color: Colors.white70),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ───────────────────────── AVATAR
   Widget _buildAvatar() {
     return Container(
-      width: 44,
-      height: 44,
+      width: 46,
+      height: 46,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.accent],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          colors: [Color(0xFF7C6FFF), Color(0xFF36D1FF)],
         ),
-        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.45),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(15),
       ),
       child: Center(
         child: Text(
-          _initials.isEmpty ? '?' : _initials,
+          _userName.isEmpty ? 'User' : _userName,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Colors.white,
-            fontWeight: FontWeight.w800,
-            fontSize: 16,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
     );
   }
 
+  // ───────────────────────── PROJECTS LIST
+  Widget _buildProjects() {
+    return RefreshIndicator(
+      onRefresh: _loadProjects,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(left: 18, right: 18, bottom: 90),
+        itemCount: _filtered.length,
+        itemBuilder: (_, i) {
+          return _ProjectCard(
+            project: _filtered[i],
+            gradient: _gradients[i % _gradients.length],
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProjectDetailScreen(project: _filtered[i]),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
 
+  Widget _buildLoading() => const Center(child: CircularProgressIndicator());
+
+  Widget _buildError() => Center(child: Text(_error ?? 'Error'));
+
+  Widget _buildEmpty() => const Center(child: Text('No Projects'));
+}
+
+// ───────────────────────── PROJECT CARD
+class _ProjectCard extends StatelessWidget {
+  final Project project;
+  final List<Color> gradient;
+  final VoidCallback onTap;
+
+  const _ProjectCard({
+    required this.project,
+    required this.gradient,
+    required this.onTap,
+  });
+
+  String _timeAgo(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final difference = DateTime.now().difference(date);
+
+      if (difference.inDays > 0) {
+        return '${difference.inDays}d ago';
+      } else if (difference.inHours > 0) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inMinutes > 0) {
+        return '${difference.inMinutes}m ago';
+      } else {
+        return 'Just now';
+      }
+    } catch (e) {
+      return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 18),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withOpacity(0.07),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.10),
+                ),
+              ),
+              child: Row(
+                children: [
+                  // ───────────────── ICON (like diagram)
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: gradient,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.folder_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // ───────────────── INFO
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          project.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+
+                        const SizedBox(height: 5),
+
+                        Text(
+                          '${_timeAgo(project.createdAt)} · ${project.diagramsCount} diagrams',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.65),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  // ───────────────── RIGHT (same diagram style)
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 13,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.close_rounded,
-                        color: AppColors.textTertiary,
-                        size: AppSizes.iconSm),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearch();
-                    },
-                  )
-                : null,
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 14),
           ),
         ),
       ),
     );
   }
-
-  // ── Shimmer loading ────────────────────────────────────────────────────────
-  Widget _buildShimmer() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.screenPadding),
-      itemCount: 4,
-      itemBuilder: (context, index) => const _ShimmerCard(),
-    );
-  }
-
-  // ── Error ──────────────────────────────────────────────────────────────────
-  Widget _buildError() {
-
-  }
-
-  // ── Empty ──────────────────────────────────────────────────────────────────
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-
 }

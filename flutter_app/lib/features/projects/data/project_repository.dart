@@ -1,5 +1,5 @@
 import '../../../core/network/api_client.dart';
-import 'projects_model.dart';
+import '../../projects/data/projects_model.dart';
 
 class ProjectRepository {
   final _client = ApiClient();
@@ -20,11 +20,10 @@ class ProjectRepository {
   Future<Map<String, dynamic>> createProject(String name) async {
     try {
       final response = await _client.post('/projects', data: {'name': name});
-      final projectData = response is Map ? response['data'] ?? response : response;
-      return {
-        'success': true,
-        'data': Project.fromJson(projectData),
-      };
+      final projectData = response is Map
+          ? response['data'] ?? response
+          : response;
+      return {'success': true, 'data': Project.fromJson(projectData)};
     } catch (e) {
       return {'success': false, 'message': e.toString()};
     }
