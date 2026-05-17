@@ -167,6 +167,21 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
             ),
           ),
         ],
+      backgroundColor: Colors.transparent,
+      appBar: _buildAppBar(),
+      body: _isGenerating ? _buildGeneratingState() : _buildForm(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+        color: AppColors.textPrimary,
+        onPressed: _isGenerating ? null : () => Navigator.of(context).pop(),
       ),
     );
   }
