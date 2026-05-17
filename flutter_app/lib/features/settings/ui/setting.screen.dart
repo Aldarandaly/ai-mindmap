@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../core/network/api_client.dart';
 import '../../auth/ui/login_screen.dart';
 
@@ -11,7 +12,8 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with AutomaticKeepAliveClientMixin {
   final _client = ApiClient();
   String _name = '';
   String _email = '';
@@ -22,6 +24,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifyCollaboration = true;
   bool _notifyInsights = false;
   String _selectedEngine = 'NLP Pro';
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -45,7 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _logout() async {
-    try { await _client.post('/logout'); } catch (_) {}
+
     await _client.clearToken();
     if (mounted) {
       Navigator.pushAndRemoveUntil(
@@ -357,6 +362,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+
   Widget _buildStorageItem() {
     final total = _projectsCount + _diagramsCount;
     final progress = (total / 100).clamp(0.0, 1.0);
@@ -369,6 +377,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.screenPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+
+  Widget _buildProfileCard() {
+    final initials =
+        _name.isNotEmpty ? _name[0].toUpperCase() : '?';
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.lg),
+
+    );
+  }
+
+  // ── Stats Card ─────────────────────────────────────────────────────────────
+  Widget _buildStatsCard() {
+    return Container(
+
             Row(
               children: [
                 const Icon(Icons.storage_rounded, size: 16, color: AppColors.primary),

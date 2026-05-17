@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
+import '../../../core/constants/app_text_styles.dart';
 import '../../../core/network/api_client.dart';
+import '../../../shared/widgets/network_background.dart';
 import '../../diagrams/ui/project_detail_screen.dart';
 import '../data/project_repository.dart';
 import '../data/projects_model.dart';
@@ -7,6 +12,15 @@ import 'widgets/create_project_modal.dart';
 
 String _initials = '';
 final _apiClient = ApiClient();
+
+// ── Gradient pairs for project cards ─────────────────────────────────────────
+const _gradients = [
+  [Color(0xFF6C63FF), Color(0xFF9B59B6)],
+  [Color(0xFF00D4FF), Color(0xFF6C63FF)],
+  [Color(0xFF9B59B6), Color(0xFF00D4FF)],
+  [Color(0xFF6C63FF), Color(0xFF00D4FF)],
+  [Color(0xFF00D4FF), Color(0xFF9B59B6)],
+];
 
 class ProjectsBody extends StatefulWidget {
   final void Function(VoidCallback)? onRegisterShowModal;
@@ -16,13 +30,16 @@ class ProjectsBody extends StatefulWidget {
   State<ProjectsBody> createState() => _ProjectsBodyState();
 }
 
-class _ProjectsBodyState extends State<ProjectsBody> {
+class _ProjectsBodyState extends State<ProjectsBody>
+    with AutomaticKeepAliveClientMixin {
   final _repo = ProjectRepository();
   final _searchController = TextEditingController();
-  List<ProjectModel> _projects = [];
-  List<ProjectModel> _filtered = [];
+
   bool _isLoading = true;
   String? _error;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -32,29 +49,26 @@ class _ProjectsBodyState extends State<ProjectsBody> {
     _searchController.addListener(_onSearch);
   }
 
-  Future<void> _init() async {
-    await _loadProjects();
-    await _loadInitials();
-  }
-
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
+  Future<void> _init() async {
+    await _loadProjects();
+    await _loadInitials();
+  }
+
   void _onSearch() {
     final q = _searchController.text.toLowerCase();
     setState(() {
-      _filtered = q.isEmpty ? _projects : _projects.where((p) => p.name.toLowerCase().contains(q) || p.description.toLowerCase().contains(q)).toList();
+
     });
   }
 
   Future<void> _loadProjects() async {
-    setState(() { _isLoading = true; _error = null; });
-    final result = await _repo.getProjects();
-    if (result['success']) {
-      setState(() { _projects = List<ProjectModel>.from(result['data']); _filtered = _projects; _isLoading = false; });
+
     } else {
       setState(() { _error = result['message']; _isLoading = false; });
     }
@@ -73,14 +87,7 @@ class _ProjectsBodyState extends State<ProjectsBody> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        padding: EdgeInsets.only(left: 20, right: 20, top: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 24),
-        decoration: const BoxDecoration(
-          color: Color(0xFF1A1A24),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: CreateProjectModal(
-          onCreated: (project) {
-            setState(() { _projects.insert(0, project); _filtered = _projects; });
+
           },
         ),
       ),
@@ -89,112 +96,7 @@ class _ProjectsBodyState extends State<ProjectsBody> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Projects', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w700)),
-                        const SizedBox(height: 6),
-                        Text('${_projects.length} projects', style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14)),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 42, height: 42,
-                    decoration: const BoxDecoration(color: Color(0xFF5B4DFF), shape: BoxShape.circle),
-                    child: Center(child: Text(_initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700))),
-                  ),
-                ],
-              ),
-            ),
 
-            const SizedBox(height: 22),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A24),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'Search projects...',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
-                    prefixIcon: Icon(Icons.search_rounded, color: Colors.white.withValues(alpha: 0.4)),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF5B4DFF)))
-                  : _error != null
-                  ? _buildError()
-                  : _filtered.isEmpty
-                  ? _buildEmpty()
-                  : RefreshIndicator(
-                      onRefresh: _loadProjects,
-                      color: const Color(0xFF5B4DFF),
-                      child: ListView.builder(
-                        padding: EdgeInsets.only(left: 20, right: 20, bottom: MediaQuery.of(context).padding.bottom + 120),
-                        itemCount: _filtered.length,
-                        itemBuilder: (_, i) {
-                          final project = _filtered[i];
-                          return GestureDetector(
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: project))),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1A1A24),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(project.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-                                        const SizedBox(height: 6),
-                                        Text(project.description, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 14)),
-                                        const SizedBox(height: 10),
-                                        Text('Updated recently', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(color: const Color(0xFF5B4DFF).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(30)),
-                                    child: Text('${project.diagramsCount} diagram${project.diagramsCount == 1 ? '' : 's'}', style: const TextStyle(color: Color(0xFF8C7BFF), fontWeight: FontWeight.w600, fontSize: 12)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
             ),
           ],
         ),
@@ -202,22 +104,91 @@ class _ProjectsBodyState extends State<ProjectsBody> {
     );
   }
 
-  Widget _buildError() {
-    return Center(child: Text(_error ?? 'Something went wrong', style: const TextStyle(color: Colors.white)));
-  }
 
-  Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.folder_open_rounded, size: 60, color: Colors.white.withValues(alpha: 0.2)),
-          const SizedBox(height: 16),
-          const Text('No projects yet', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
-          Text('Create your first project', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildAvatar(),
         ],
       ),
     );
   }
+
+  Widget _buildAvatar() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, AppColors.accent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.45),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          _initials.isEmpty ? '?' : _initials,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+
+            ),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: Icon(Icons.close_rounded,
+                        color: AppColors.textTertiary,
+                        size: AppSizes.iconSm),
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearch();
+                    },
+                  )
+                : null,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Shimmer loading ────────────────────────────────────────────────────────
+  Widget _buildShimmer() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.screenPadding),
+      itemCount: 4,
+      itemBuilder: (context, index) => const _ShimmerCard(),
+    );
+  }
+
+  // ── Error ──────────────────────────────────────────────────────────────────
+  Widget _buildError() {
+
+  }
+
+  // ── Empty ──────────────────────────────────────────────────────────────────
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+
 }

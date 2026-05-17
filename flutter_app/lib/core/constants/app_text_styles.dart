@@ -24,6 +24,10 @@ class AppTextStyles {
     height: 1.4,
   );
 
+  static const TextStyle headingLarge  = h1;
+  static const TextStyle headingMedium = h2;
+  static const TextStyle headingSmall  = h3;
+
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w400,
@@ -42,6 +46,13 @@ class AppTextStyles {
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
+    height: 1.4,
+  );
+
+  static const TextStyle caption = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
+    color: AppColors.textTertiary,
     height: 1.4,
   );
 

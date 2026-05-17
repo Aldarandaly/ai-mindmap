@@ -1,67 +1,52 @@
-class ProjectModel {
+class Project {
   final int id;
   final String name;
-  final String description;
+  final String? description;
   final int diagramsCount;
-  final DateTime? updatedAt;
-  final DateTime? createdAt;
+  final String createdAt;
+  final String updatedAt;
 
-  const ProjectModel({
+  Project({
     required this.id,
     required this.name,
-    required this.description,
+    this.description,
     required this.diagramsCount,
-    this.updatedAt,
-    this.createdAt,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
-  // ─── From Laravel API response ───────────────────────────
-  factory ProjectModel.fromJson(Map<String, dynamic> json) {
-  print('diagrams_count raw: ${json['diagrams_count']} type: ${json['diagrams_count'].runtimeType}');
-  return ProjectModel(
-    id: int.tryParse(json['id'].toString()) ?? 0,
-    name: json['name'] as String? ?? '',
-    description: json['description'] as String? ?? '',
-    diagramsCount: int.tryParse(json['diagrams_count'].toString()) ?? 0,
-  );
-}
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'description': description,
-    'diagrams_count': diagramsCount,
-    'updated_at': updatedAt?.toIso8601String(),
-    'created_at': createdAt?.toIso8601String(),
-  };
-
-  // ─── Helpers ─────────────────────────────────────────────
-
-  /// e.g. "Updated 2h ago" / "Updated yesterday"
+  // ✅ إضافة updatedAtLabel getter
   String get updatedAtLabel {
-    if (updatedAt == null) return '';
-    final diff = DateTime.now().difference(updatedAt!);
-    if (diff.inMinutes < 60) return 'Updated ${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return 'Updated ${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Updated yesterday';
-    return 'Updated ${diff.inDays}d ago';
+    try {
+      final dt = DateTime.parse(updatedAt);
+      final diff = DateTime.now().difference(dt);
+      if (diff.inMinutes < 1)  return 'Just now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24)   return '${diff.inHours}h ago';
+      if (diff.inDays < 7)     return '${diff.inDays}d ago';
+      return '${dt.day}/${dt.month}/${dt.year}';
+    } catch (_) {
+      return updatedAt;
+    }
   }
 
-  ProjectModel copyWith({
-    int? id,
-    String? name,
-    String? description,
-    int? diagramsCount,
-    DateTime? updatedAt,
-    DateTime? createdAt,
-  }) {
-    return ProjectModel(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      diagramsCount: diagramsCount ?? this.diagramsCount,
-      updatedAt: updatedAt ?? this.updatedAt,
-      createdAt: createdAt ?? this.createdAt,
+  factory Project.fromJson(Map<String, dynamic> json) {
+    return Project(
+      id:            json['id'] as int,
+      name:          json['name'] as String,
+      description:   json['description'] as String?,
+      diagramsCount: json['diagrams_count'] as int? ?? 0,
+      createdAt:     json['created_at'] as String,
+      updatedAt:     json['updated_at'] as String,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id':             id,
+    'name':           name,
+    'description':    description,
+    'diagrams_count': diagramsCount,
+    'created_at':     createdAt,
+    'updated_at':     updatedAt,
+  };
 }
