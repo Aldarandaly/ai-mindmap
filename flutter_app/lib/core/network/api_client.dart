@@ -5,87 +5,142 @@ import 'api_exception.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
+
   factory ApiClient() => _instance;
 
   ApiClient._internal() {
     _loadTokenOnInit();
   }
 
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage =
+      const FlutterSecureStorage();
 
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: AppConstants.baseUrl,
       connectTimeout: AppConstants.connectTimeout,
       receiveTimeout: AppConstants.receiveTimeout,
-      headers: {'Accept': 'application/json'},
+      headers: {
+        'Accept': 'application/json',
+      },
     ),
   );
 
-  // ── Token Auto Load ───────────────────────────────────────
+  // ─────────────────────────────────────────────
+  // TOKEN AUTO LOAD
+  // ─────────────────────────────────────────────
 
   Future<void> _loadTokenOnInit() async {
-    final token = await _storage.read(key: AppConstants.tokenKey);
+    final token = await _storage.read(
+      key: AppConstants.tokenKey,
+    );
+
     if (token != null) {
-      _dio.options.headers['Authorization'] = 'Bearer $token';
+      _dio.options.headers['Authorization'] =
+          'Bearer $token';
     }
   }
 
-  // ── Token Management ──────────────────────────────────────
+  // ─────────────────────────────────────────────
+  // USER DATA
+  // ─────────────────────────────────────────────
 
   Future<void> saveUserName(String name) async {
-    await _storage.write(key: 'user_name', value: name);
+    await _storage.write(
+      key: 'user_name',
+      value: name,
+    );
   }
 
   Future<String?> getUserName() async {
-    return await _storage.read(key: 'user_name');
+    return await _storage.read(
+      key: 'user_name',
+    );
   }
 
+  // ─────────────────────────────────────────────
+  // TOKEN MANAGEMENT
+  // ─────────────────────────────────────────────
+
   Future<void> saveToken(String token) async {
-    await _storage.write(key: AppConstants.tokenKey, value: token);
-    _dio.options.headers['Authorization'] = 'Bearer $token';
+    await _storage.write(
+      key: AppConstants.tokenKey,
+      value: token,
+    );
+
+    _dio.options.headers['Authorization'] =
+        'Bearer $token';
   }
 
   Future<void> loadToken() async {
-    final token = await _storage.read(key: AppConstants.tokenKey);
+    final token = await _storage.read(
+      key: AppConstants.tokenKey,
+    );
+
     if (token != null) {
-      _dio.options.headers['Authorization'] = 'Bearer $token';
+      _dio.options.headers['Authorization'] =
+          'Bearer $token';
     }
   }
 
   Future<void> clearToken() async {
-    await _storage.delete(key: AppConstants.tokenKey);
-    _dio.options.headers.remove('Authorization');
+    await _storage.delete(
+      key: AppConstants.tokenKey,
+    );
+
+    _dio.options.headers.remove(
+      'Authorization',
+    );
   }
 
   Future<bool> hasToken() async {
-    final token = await _storage.read(key: AppConstants.tokenKey);
+    final token = await _storage.read(
+      key: AppConstants.tokenKey,
+    );
+
     return token != null && token.isNotEmpty;
   }
 
-  // ── HTTP Methods ──────────────────────────────────────────
+  // ─────────────────────────────────────────────
+  // HTTP METHODS
+  // ─────────────────────────────────────────────
 
   Future<dynamic> get(String path) async {
     try {
       final response = await _dio.get(path);
+
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<dynamic> post(String path, {Map<String, dynamic>? data}) async {
+  Future<dynamic> post(
+    String path, {
+    Map<String, dynamic>? data,
+  }) async {
     try {
-      final response = await _dio.post(path, data: data);
+      final response = await _dio.post(
+        path,
+        data: data,
+      );
+
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
-  Future<dynamic> put(String path, {Map<String, dynamic>? data}) async {
+  Future<dynamic> put(
+    String path, {
+    Map<String, dynamic>? data,
+  }) async {
     try {
-      final response = await _dio.put(path, data: data);
+      final response = await _dio.put(
+        path,
+        data: data,
+      );
+
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -95,37 +150,84 @@ class ApiClient {
   Future<dynamic> delete(String path) async {
     try {
       final response = await _dio.delete(path);
+
       return response.data;
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
-  // ── Error Handler ─────────────────────────────────────────
+
+  // ─────────────────────────────────────────────
+  // CHAT API
+  // ─────────────────────────────────────────────
+
+  Future<dynamic> sendMessage({
+    required int projectId,
+    required String message,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/chat/send',
+        data: {
+          'project_id': projectId,
+          'message': message,
+        },
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // ERROR HANDLER
+  // ─────────────────────────────────────────────
 
   ApiException _handleError(DioException e) {
     switch (e.response?.statusCode) {
       case 401:
         return const UnauthorizedException();
+
       case 404:
         return NotFoundException(
-          message: e.response?.data?['message'] ?? 'Not found.',
+          message:
+              e.response?.data?['message'] ??
+              'Not found.',
         );
+
       case 422:
-        final errors = e.response?.data?['errors'] as Map<String, dynamic>?;
+        final errors =
+            e.response?.data?['errors']
+                as Map<String, dynamic>?;
+
         final first = errors?.values.first;
+
         final msg = first is List
             ? first.first.toString()
-            : e.response?.data?['message']?.toString() ?? 'Validation error.';
-        return ApiException(message: msg, statusCode: 422);
+            : e.response?.data?['message']
+                      ?.toString() ??
+                  'Validation error.';
+
+        return ApiException(
+          message: msg,
+          statusCode: 422,
+        );
+
       default:
-        if (e.type == DioExceptionType.connectionTimeout ||
-            e.type == DioExceptionType.receiveTimeout ||
-            e.type == DioExceptionType.connectionError) {
+        if (e.type ==
+                DioExceptionType.connectionTimeout ||
+            e.type ==
+                DioExceptionType.receiveTimeout ||
+            e.type ==
+                DioExceptionType.connectionError) {
           return const NetworkException();
         }
+
         return ApiException(
           message:
-              e.response?.data?['message']?.toString() ??
+              e.response?.data?['message']
+                  ?.toString() ??
               'Something went wrong.',
           statusCode: e.response?.statusCode,
         );

@@ -910,6 +910,9 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
       },
     });
     const code = `$cleanCode`;
+
+    const code = \`$cleanCode\`;
+
     async function renderDiagram() {
       try {
         const el = document.getElementById('diagram');
@@ -931,6 +934,71 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
       Uint8List? image = _capturedImage ??
           await _screenshotController.capture(pixelRatio: 2.0);
       if (image == null) throw Exception('Could not capture');
+  void _copyCode() {
+    final code = widget.diagram.diagramCode ?? '';
+    Clipboard.setData(ClipboardData(text: code));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Code copied to clipboard', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showExportSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1A24),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+            ),
+            const SizedBox(height: 16),
+            const Text('Export as', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.image_rounded, color: AppColors.primary),
+              title: const Text('PNG Image', style: TextStyle(color: AppColors.textPrimary)),
+              subtitle: const Text('Save as image', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              onTap: () { Navigator.pop(context); _exportPNG(); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
+              title: const Text('PDF Document', style: TextStyle(color: AppColors.textPrimary)),
+              subtitle: const Text('Save as PDF', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              onTap: () { Navigator.pop(context); _exportPDF(); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.code_rounded, color: AppColors.primary),
+              title: const Text('Mermaid Code', style: TextStyle(color: AppColors.textPrimary)),
+              subtitle: const Text('Share code', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              onTap: () { Navigator.pop(context); _exportCode(); },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportPNG() async {
+    setState(() => _isExporting = true);
+    try {
+      Uint8List? image = _capturedImage;
+      image ??= await _screenshotController.capture(pixelRatio: 2.0);
+      if (image == null) throw Exception('Could not capture diagram');
       final dir = await getTemporaryDirectory();
       final file =
           File('${dir.path}/${widget.diagram.name}.png');
@@ -957,6 +1025,9 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
       Uint8List? image = _capturedImage ??
           await _screenshotController.capture(pixelRatio: 2.0);
       if (image == null) throw Exception('Could not capture');
+      Uint8List? image = _capturedImage;
+      image ??= await _screenshotController.capture(pixelRatio: 2.0);
+      if (image == null) throw Exception('Could not capture diagram');
       final pdf = pw.Document();
       final pdfImage = pw.MemoryImage(image);
       pdf.addPage(
@@ -970,6 +1041,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                   style: pw.TextStyle(
                       fontSize: 18,
                       fontWeight: pw.FontWeight.bold)),
+              pw.Text(widget.diagram.name, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 10),
               pw.Center(child: pw.Image(pdfImage)),
             ],
@@ -980,6 +1052,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
         bytes: await pdf.save(),
         filename: '${widget.diagram.name}.pdf',
       );
+      await Printing.sharePdf(bytes: await pdf.save(), filename: '${widget.diagram.name}.pdf');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -997,6 +1070,36 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   void _exportCode() {
     Share.share(widget.diagram.diagramCode ?? '',
         subject: widget.diagram.name);
+    Share.share(widget.diagram.diagramCode ?? '', subject: widget.diagram.name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent, // ← غيّرناه
+      appBar: _buildAppBar(),
+      body: _buildBody(),
+      bottomNavigationBar: _buildBottomBar(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent, // ← غيّرناه
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+        color: AppColors.textPrimary,
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+      title: Text(
+        widget.diagram.name.isNotEmpty ? widget.diagram.name : 'Untitled',
+        style: AppTextStyles.h3,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
   }
 }
 
@@ -1062,6 +1165,84 @@ class _ToggleChip extends StatelessWidget {
                     ? FontWeight.w700
                     : FontWeight.w400,
               ),
+  Widget _buildBody() {
+    if (widget.diagram.diagramCode == null || widget.diagram.diagramCode!.isEmpty) {
+      return _buildNoCode();
+    }
+    return Column(
+      children: [
+        AnimatedSize(
+          duration: const Duration(milliseconds: 500),
+          child: AnimatedOpacity(
+            opacity: _showBanner ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 500),
+            child: _showBanner
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: _buildStatusBanner(),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                Expanded(child: _buildToggleChip('Preview', !_showCode)),
+                Expanded(child: _buildToggleChip('Mermaid code', _showCode)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Expanded(child: _showCode ? _buildCodeView() : _buildPreview()),
+      ],
+    );
+  }
+
+  Widget _buildPreview() {
+    if (_webController != null) {
+      return Screenshot(
+        controller: _screenshotController,
+        child: Stack(
+          children: [
+            WebViewWidget(controller: _webController!),
+            if (_webViewLoading)
+              Container(
+                color: AppColors.background,
+                child: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              ),
+          ],
+        ),
+      );
+    }
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80, height: 80,
+              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppSizes.radiusLg)),
+              child: const Icon(Icons.auto_awesome_rounded, size: 36, color: AppColors.primary),
+            ),
+            const SizedBox(height: 16),
+            Text('Diagram Ready', style: AppTextStyles.h3),
+            const SizedBox(height: 8),
+            const Text('Visual preview is available on mobile.\nTap "Mermaid code" to view the code.', textAlign: TextAlign.center, style: TextStyle(fontSize: AppSizes.fontSm, color: AppColors.textSecondary)),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => setState(() => _showCode = true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd))),
+              icon: const Icon(Icons.code_rounded, size: 18),
+              label: const Text('View Mermaid Code'),
             ),
           ],
         ),
@@ -1087,6 +1268,42 @@ class _ExportOption extends StatelessWidget {
     required this.color2,
     required this.onTap,
   });
+  Widget _buildCodeView() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppSizes.radiusLg), border: Border.all(color: AppColors.border)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Mermaid Code', style: TextStyle(fontSize: AppSizes.fontSm, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                GestureDetector(
+                  onTap: _copyCode,
+                  child: const Row(children: [
+                    Icon(Icons.copy_rounded, size: 14, color: AppColors.primary),
+                    SizedBox(width: 4),
+                    Text('Copy', style: TextStyle(fontSize: AppSizes.fontSm, color: AppColors.primary, fontWeight: FontWeight.w500)),
+                  ]),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Divider(color: AppColors.border),
+            const SizedBox(height: 8),
+            SelectableText(
+              widget.diagram.diagramCode ?? '',
+              style: const TextStyle(color: AppColors.textPrimary, fontFamily: 'monospace', fontSize: 13, height: 1.6),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1155,6 +1372,57 @@ class _ExportOption extends StatelessWidget {
               const Icon(Icons.chevron_right_rounded,
                   size: 18, color: AppColors.textTertiary),
             ],
+          const SizedBox(height: AppSizes.lg),
+          Text('No diagram yet', style: AppTextStyles.h3),
+          const SizedBox(height: AppSizes.xs),
+          const Text('The diagram is still being generated.', style: TextStyle(fontSize: AppSizes.fontMd, color: AppColors.textSecondary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleChip(String label, bool isSelected) {
+    return GestureDetector(
+      onTap: () => setState(() => _showCode = label == 'Mermaid code'),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+        ),
+        child: Center(child: Text(label, style: TextStyle(fontSize: AppSizes.fontSm, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : AppColors.textSecondary))),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _isExporting ? null : _showExportSheet,
+              style: OutlinedButton.styleFrom(foregroundColor: AppColors.textPrimary, side: const BorderSide(color: AppColors.border), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd))),
+              icon: _isExporting
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                  : const Icon(Icons.download_rounded, size: 18),
+              label: Text(_isExporting ? 'Exporting...' : 'Export', style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => setState(() => _showCode = !_showCode),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd))),
+              icon: Icon(_showCode ? Icons.visibility_rounded : Icons.code_rounded, size: 18),
+              label: Text(_showCode ? 'Preview' : 'Code', style: const TextStyle(fontWeight: FontWeight.w600)),
+            ),
           ),
         ),
       ),

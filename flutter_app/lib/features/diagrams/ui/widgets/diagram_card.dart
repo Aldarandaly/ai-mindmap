@@ -96,6 +96,45 @@ class _DiagramCardState extends State<DiagramCard>
                           colors: [typeColor, typeColor2],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
+    final typeColor = _typeColor(diagram.type);
+    final typeIcon = _typeIcon(diagram.type);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(AppSizes.cardPadding),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A24),
+          borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: typeColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(typeIcon, color: typeColor, size: 24),
+            ),
+            const SizedBox(width: 14),
+
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          diagram.name.isNotEmpty ? diagram.name : 'Untitled',
+                          style: AppTextStyles.labelLarge,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         borderRadius: BorderRadius.circular(
                             AppSizes.radiusMd),
@@ -181,28 +220,13 @@ class _DiagramCardState extends State<DiagramCard>
   // ── Type helpers ──────────────────────────────────────────────────────────
   Color _typeColor(String type) {
     switch (type) {
-      case 'erd':      return AppColors.diagramErd;
-      case 'class':    return AppColors.diagramClass;
-      case 'mindmap':  return AppColors.diagramMindmap;
-      default:         return AppColors.diagramAuto;
-    }
-  }
 
-  Color _typeColor2(String type) {
-    switch (type) {
-      case 'erd':      return AppColors.accent;
-      case 'class':    return AppColors.primary;
-      case 'mindmap':  return AppColors.diagramErd;
-      default:         return AppColors.diagramMindmap;
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type) {
-      case 'erd':      return Icons.table_chart_rounded;
-      case 'class':    return Icons.code_rounded;
-      case 'mindmap':  return Icons.account_tree_rounded;
-      default:         return Icons.auto_awesome_rounded;
+
     }
   }
 

@@ -50,17 +50,7 @@ class _RecentScreenState extends State<RecentScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    return Container(
-      // ← gradient background بدل flat color
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.background, Color(0xFF1A0535)],
-        ),
-      ),
-      child: SafeArea(
+
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

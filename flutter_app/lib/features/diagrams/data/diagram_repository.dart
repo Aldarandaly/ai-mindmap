@@ -49,30 +49,34 @@ class DiagramRepository {
   }
 
   Future<Diagram> generateDiagram({
-    required int projectId,
-    required String name,
-    required String description,
-    required String type,
-  }) async {
-    try {
-      print('GENERATING: projectId=$projectId, name=$name, type=$type');
-      final response = await _client.post(
-        '/diagrams/generate',
-        data: {
-          'project_id': projectId,
-          'name': name,
-          'input_text': description,
-          'type': type,
-        },
-      );
-      print('GENERATE RESPONSE: $response');
-      final data = response is Map ? (response['data'] ?? response) : response;
-      return Diagram.fromJson(Map<String, dynamic>.from(data));
-    } catch (e) {
-      print('GENERATE ERROR: $e');
-      rethrow;
+  required int projectId,
+  required String name,
+  required String description,
+  required String type,
+}) async {
+  try {
+    final response = await _client.post(
+      '/diagrams/generate',
+      data: {
+        'project_id': projectId,
+        'name': name,
+        'input_text': description,
+        'type': type,
+      },
+    );
+    print('GENERATE RESPONSE: $response');
+
+    if (response is Map && response['error'] != null) {
+      throw Exception(response['error']['message'] ?? 'Generation failed');
     }
+
+    final data = response is Map ? (response['data'] ?? response) : response;
+    return Diagram.fromJson(Map<String, dynamic>.from(data));
+  } catch (e) {
+    print('GENERATE ERROR: $e');
+    rethrow;
   }
+}
 
   Future<Diagram> getDiagram(int id) async {
     final response = await _client.get('/diagrams/$id');

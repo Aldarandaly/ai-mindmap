@@ -12,9 +12,12 @@ class Project extends Model
     {
         return $this->belongsTo(User::class);
     }
-
     public function diagrams()
     {
         return $this->hasMany(Diagram::class);
+    }
+    public function chats()
+    {
+        return $this->hasMany(Chat::class);
     }
 }
