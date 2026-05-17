@@ -7,6 +7,8 @@ from app.services.generator import generate_mermaid, analyze_text, explain_diagr
 from app.services.validator import basic_validate_mermaid, advanced_validate_mermaid
 from app.services.error_handling import handle_error
 from app.services.rate_limiter import limiter
+from pydantic import BaseModel
+from typing import List, Optional
 
 router = APIRouter()
 
@@ -56,6 +58,59 @@ async def generate_diagram(request: Request, body: GenerateRequest):
         print(f"REAL ERROR: {type(e).__name__}: {str(e)}")
         handle_error(e)
 
+   
+
+class ChatMessage(BaseModel):
+    role: str
+    message: str
+
+class ChatRequest(BaseModel):
+    message: str
+    history: List[ChatMessage] = []
+    project_name: str = ""
+
+class ChatResponse(BaseModel):
+    reply: str
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat(request: Request, body: ChatRequest):
+    try:
+        # Build conversation history for Groq
+        messages = []
+        
+        # System prompt
+        messages.append({
+            "role": "system",
+            "content": f"""You are an AI assistant helping with software diagrams for project: {body.project_name}.
+You can help users:
+- Generate and improve ERD, Class, Mind Map, Sequence, Use Case diagrams
+- Explain diagram concepts
+- Suggest improvements
+- Answer questions about software design
+Keep responses concise and helpful."""
+        })
+        
+        # Add history
+        for msg in body.history[-10:]:  # last 10 messages for context
+            role = "user" if msg.role == "user" else "assistant"
+            messages.append({"role": role, "content": msg.message})
+        
+        # Add current message
+        messages.append({"role": "user", "content": body.message})
+        
+        from app.services.generator import client
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            max_tokens=500,
+        )
+        
+        reply = response.choices[0].message.content.strip()
+        return ChatResponse(reply=reply)
+        
+    except Exception as e:
+        print(f"Chat Error: {e}")
+        raise HTTPException(status_code=500, detail="Chat failed")
 
 @router.get("/health")
 async def health_check():

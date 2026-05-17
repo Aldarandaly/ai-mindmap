@@ -116,11 +116,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   // OPEN AI CHAT
   void _openChat() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const ChatScreen()),
-    );
-  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ChatScreen(project: widget.project),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
