@@ -3,10 +3,11 @@ import 'package:flutter/services.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/network/api_client.dart';
 import '../../diagrams/ui/project_detail_screen.dart';
-import '../data/project_repository.dart';
-import '../data/projects_model.dart';
+import '../../projects/data/project_repository.dart';
+import '../../projects/data/projects_model.dart';
 import 'widgets/create_project_modal.dart';
 import '../../../core/constants/app_sizes.dart';
+import '../../../core/state/user_notifier.dart';
 import 'dart:ui';
 
 String _initials = '';
@@ -231,14 +232,21 @@ class _ProjectsBodyState extends State<ProjectsBody>
         borderRadius: BorderRadius.circular(15),
       ),
       child: Center(
-        child: Text(
-          _userName.isEmpty ? 'User' : _userName,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
+        child: ValueListenableBuilder<String>(
+          valueListenable: UserNotifier.userName,
+          builder: (context, value, _) {
+            final firstName = value.trim().split(' ').first;
+
+            return Text(
+              firstName,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            );
+          },
         ),
       ),
     );
@@ -314,45 +322,52 @@ class _ProjectCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 18),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 14,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: Colors.white.withOpacity(0.07),
+                color: Colors.white.withOpacity(0.10),
+
                 border: Border.all(
                   color: Colors.white.withOpacity(0.10),
+                  width: 1.2,
                 ),
+
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 25,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  // ───────────────── ICON (like diagram)
+                  // ICON
                   Container(
-                    width: 50,
-                    height: 50,
+                    width: 54,
+                    height: 54,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: gradient,
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
                       Icons.folder_rounded,
                       color: Colors.white,
-                      size: 24,
+                      size: 28,
                     ),
                   ),
 
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 16),
 
-                  // ───────────────── INFO
+                  // INFO
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,10 +383,10 @@ class _ProjectCard extends StatelessWidget {
                           ),
                         ),
 
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 8),
 
                         Text(
-                          '${_timeAgo(project.createdAt)} · ${project.diagramsCount} diagrams',
+                          _timeAgo(project.createdAt),
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.65),
                             fontSize: 13,
@@ -384,21 +399,49 @@ class _ProjectCard extends StatelessWidget {
 
                   const SizedBox(width: 10),
 
-                  // ───────────────── RIGHT (same diagram style)
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 13,
-                        color: Colors.grey,
+                  // ARROW
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: const Color(0xFFBFA2FF).withOpacity(0.25),
+                          ),
+                        ),
+                        child: Text(
+                          '${project.diagramsCount} diagrams',
+                          style: const TextStyle(
+                            color: Color(0xFFD8C8FF),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
+
+                      const SizedBox(width: 10),
+
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Colors.grey,
+                            size: 14,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

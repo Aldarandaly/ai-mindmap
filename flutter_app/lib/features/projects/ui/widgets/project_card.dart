@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_text_styles.dart';
 import '../../data/projects_model.dart';
 
 class ProjectCard extends StatelessWidget {
   final Project project;
-
   final VoidCallback onTap;
-
   final int index;
 
   const ProjectCard({
@@ -27,8 +24,7 @@ class ProjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradient =
-        _gradients[index % _gradients.length];
+    final gradient = _gradients[index % _gradients.length];
 
     return GestureDetector(
       onTap: onTap,
@@ -38,17 +34,14 @@ class ProjectCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
 
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-
+          color: Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(18),
-
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: Colors.white.withOpacity(0.10),
           ),
-
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
+              color: Colors.black.withOpacity(0.14),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -57,36 +50,25 @@ class ProjectCard extends StatelessWidget {
 
         child: Row(
           children: [
-            // ───────────────────────────────────
-            // Folder Icon
-            // ───────────────────────────────────
-
+            // ICON
             Container(
               width: 52,
               height: 52,
-
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: gradient,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-
-                borderRadius:
-                    BorderRadius.circular(16),
-
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: gradient[0]
-                        .withValues(alpha: 0.28),
-
+                    color: gradient[0].withOpacity(0.28),
                     blurRadius: 10,
-
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
-
               child: const Icon(
                 Icons.folder_rounded,
                 color: Colors.white,
@@ -96,32 +78,23 @@ class ProjectCard extends StatelessWidget {
 
             const SizedBox(width: 14),
 
-            // ───────────────────────────────────
-            // Project Info
-            // ───────────────────────────────────
-
+            // INFO
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-
+                mainAxisSize: MainAxisSize.min, // 🔥 fix overflow
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Expanded(
+                      Flexible( // 🔥 بدل Expanded
                         child: Text(
                           project.name,
-
                           maxLines: 1,
-
-                          overflow:
-                              TextOverflow.ellipsis,
-
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 17,
-                            fontWeight:
-                                FontWeight.w700,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
@@ -137,35 +110,24 @@ class ProjectCard extends StatelessWidget {
 
                   const SizedBox(height: 4),
 
-                  if ((project.description ?? '')
-                      .isNotEmpty) ...[
+                  if ((project.description ?? '').isNotEmpty) ...[
                     Text(
                       project.description ?? '',
-
                       maxLines: 1,
-
-                      overflow:
-                          TextOverflow.ellipsis,
-
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white
-                            .withValues(alpha: 0.60),
-
+                        color: Colors.white.withOpacity(0.60),
                         fontSize: 12,
                         height: 1.2,
                       ),
                     ),
-
                     const SizedBox(height: 3),
                   ],
 
                   Text(
                     project.updatedAtLabel,
-
                     style: TextStyle(
-                      color: Colors.white
-                          .withValues(alpha: 0.42),
-
+                      color: Colors.white.withOpacity(0.42),
                       fontSize: 11,
                     ),
                   ),
@@ -175,26 +137,17 @@ class ProjectCard extends StatelessWidget {
 
             const SizedBox(width: 8),
 
-            // ───────────────────────────────────
-            // Arrow
-            // ───────────────────────────────────
-
+            // ARROW
             Container(
               width: 28,
               height: 28,
-
               decoration: BoxDecoration(
-                color:
-                    Colors.white.withValues(alpha: 0.05),
-
-                borderRadius:
-                    BorderRadius.circular(8),
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
               ),
-
               child: Icon(
                 Icons.arrow_forward_ios_rounded,
-                color:
-                    Colors.white.withValues(alpha: 0.55),
+                color: Colors.white.withOpacity(0.55),
                 size: 12,
               ),
             ),
@@ -205,13 +158,11 @@ class ProjectCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────
-// Badge
-// ─────────────────────────────────────────────────────
-
+// ─────────────────────────────────────────────
+// BADGE
+// ─────────────────────────────────────────────
 class _DiagramsBadge extends StatelessWidget {
   final int count;
-
   final Color color;
 
   const _DiagramsBadge({
@@ -226,20 +177,15 @@ class _DiagramsBadge extends StatelessWidget {
         horizontal: 8,
         vertical: 4,
       ),
-
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(16),
-
         border: Border.all(
-          color: color.withValues(alpha: 0.22),
+          color: color.withOpacity(0.22),
         ),
       ),
-
       child: Text(
         '$count',
-
         style: TextStyle(
           color: color,
           fontWeight: FontWeight.w700,
