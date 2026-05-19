@@ -1,29 +1,70 @@
 def get_erd_prompt(text: str) -> str:
     return f"""
-Create a valid Mermaid.js ERD diagram. Output ONLY the Mermaid code, nothing else.
+You are an expert database architect. Create a professional Mermaid.js ERD diagram.
+Output ONLY valid Mermaid code. No explanation. No markdown. No code blocks.
 
-STRICT RULES:
-- Start with 'erDiagram'
-- Each attribute on its own line inside braces
-- Format: TYPE NAME or TYPE NAME PK or TYPE NAME FK
-- Valid relationships: ||--||, ||--|{{, }}|--|{{, }}o--o{{
-- No commas inside attribute blocks
-- No explanations
-- No markdown
+STRICT SYNTAX RULES:
+- Start with: erDiagram
+- Entity: ENTITY_NAME {{ }}
+- Attributes: type name KEY_TYPE (PK, FK, or empty)
+- Relationships: ENTITY1 CARDINALITY ENTITY2 : "label"
 
-CORRECT Example:
+VALID CARDINALITY:
+- One to one:    ENTITY1 ||--|| ENTITY2 : "label"
+- One to many:   ENTITY1 ||--o{{ ENTITY2 : "label"
+- Many to one:   ENTITY1 }}o--|| ENTITY2 : "label"
+- Many to many:  ENTITY1 }}o--o{{ ENTITY2 : "label"
+- Zero or one:   ENTITY1 |o--o| ENTITY2 : "label"
+
+CORRECT EXAMPLE:
 erDiagram
     USER {{
         int id PK
         string name
         string email
+        string password
+        datetime created_at
+    }}
+    PRODUCT {{
+        int id PK
+        string name
+        float price
+        int stock
+        int category_id FK
+    }}
+    CATEGORY {{
+        int id PK
+        string name
+        string description
     }}
     ORDER {{
         int id PK
         int user_id FK
-        decimal total
+        float total
+        string status
+        datetime ordered_at
     }}
-    USER ||--|{{ ORDER : places
+    ORDER_ITEM {{
+        int id PK
+        int order_id FK
+        int product_id FK
+        int quantity
+        float unit_price
+    }}
+
+    USER ||--o{{ ORDER : "places"
+    ORDER ||--o{{ ORDER_ITEM : "contains"
+    PRODUCT ||--o{{ ORDER_ITEM : "included in"
+    CATEGORY ||--o{{ PRODUCT : "categorizes"
+
+RULES:
+- Entity names in UPPER_SNAKE_CASE
+- Always include PK for each entity
+- Mark foreign keys with FK
+- Use snake_case for attribute names
+- Add meaningful relationship labels
+- No commas in attribute blocks
+- Each attribute on its own line
 
 Text:
 {text}

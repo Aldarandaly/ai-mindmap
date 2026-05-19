@@ -1,23 +1,50 @@
 def get_activity_prompt(text: str) -> str:
     return f"""
-Analyze the text below following these steps to create a perfect Mermaid.js ACTIVITY DIAGRAM:
+You are an expert software architect. Create a professional Mermaid.js Activity Diagram.
+Output ONLY valid Mermaid code. No explanation. No markdown. No code blocks.
 
-STEP 1: Identify the start and end points of the process.
-STEP 2: Extract all activities/actions in sequence.
-STEP 3: Identify decision points (conditions/branches).
-STEP 4: Detect parallel activities (fork/join).
-STEP 5: Output ONLY the final Mermaid code.
+STRICT SYNTAX RULES:
+- Start with: flowchart TD
+- Start node: Start([Start])
+- End node: End([End])
+- Activities: A[Activity Name]
+- Decisions: D{{Decision?}}
+- Arrows: A --> B
+- Labeled arrows: A -->|Yes| B or A -->|No| C
+- Parallel: use subgraph for parallel flows
 
-Rules for Output:
-- Start with 'flowchart TD'.
-- Use rounded rectangles for activities: ActivityName([ActivityName])
-- Use diamond shapes for decisions: DecisionName{{DecisionName}}
-- Use --> for transitions
-- Add labels on transitions where needed: -->|label|
-- Start with a filled circle: S((Start))
-- End with a double circle: E(((End)))
-- No explanations or extra text.
+CORRECT EXAMPLE:
+flowchart TD
+    Start([Start])
+    A[User Opens App]
+    B[Enter Credentials]
+    C{{Valid Credentials?}}
+    D[Show Dashboard]
+    E[Show Error Message]
+    F[Increment Attempt Counter]
+    G{{Max Attempts Reached?}}
+    H[Lock Account]
+    End([End])
 
-Text to Analyze:
+    Start --> A
+    A --> B
+    B --> C
+    C -->|Yes| D
+    C -->|No| E
+    E --> F
+    F --> G
+    G -->|Yes| H
+    G -->|No| B
+    D --> End
+    H --> End
+
+RULES:
+- Every node must be defined before use
+- No special characters in node labels
+- Always have Start and End nodes
+- Max 15 nodes for clarity
+- Use meaningful action names (verbs)
+
+Text:
 {text}
 """

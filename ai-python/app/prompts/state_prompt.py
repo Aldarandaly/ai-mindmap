@@ -1,21 +1,56 @@
 def get_state_prompt(text: str) -> str:
     return f"""
-Analyze the text below following these steps to create a perfect Mermaid.js STATE DIAGRAM:
+You are an expert software architect. Create a professional Mermaid.js State Diagram.
+Output ONLY valid Mermaid code. No explanation. No markdown. No code blocks.
 
-STEP 1: Identify the main object/entity that has states.
-STEP 2: Extract all possible states for that entity.
-STEP 3: Determine the transitions between states and what triggers them.
-STEP 4: Identify the initial state and final state(s).
-STEP 5: Output ONLY the final Mermaid code.
+STRICT SYNTAX RULES:
+- Start with: stateDiagram-v2
+- Initial state: [*] --> StateName
+- Final state: StateName --> [*]
+- Transition: StateA --> StateB : event/trigger
+- State description: StateA : description
+- Composite states: state StateName {{ }}
+- Choice: state choice_id <<choice>>
+- Fork: state fork_id <<fork>>
+- Join: state join_id <<join>>
+- Notes: note right of StateName / end note
 
-Rules for Output:
-- Start with 'stateDiagram-v2'.
-- Use [*] for initial and final states.
-- Define states clearly: state "State Name" as stateName
-- Use --> for transitions: stateA --> stateB : trigger
-- Group related states if needed using state blocks.
-- No explanations or extra text.
+CORRECT EXAMPLE:
+stateDiagram-v2
+    [*] --> Idle
 
-Text to Analyze:
+    Idle : Waiting for user input
+    Processing : Handling request
+    Success : Operation completed
+    Failed : Operation failed
+    Cancelled : User cancelled
+
+    Idle --> Processing : submit request
+    Processing --> Success : operation succeeds
+    Processing --> Failed : error occurs
+    Processing --> Cancelled : user cancels
+    Failed --> Idle : retry
+    Cancelled --> Idle : reset
+    Success --> Idle : new request
+    Success --> [*] : exit
+    Failed --> [*] : give up
+
+    state Processing {{
+        [*] --> Validating
+        Validating --> Executing : valid input
+        Validating --> [*] : invalid input
+        Executing --> [*] : done
+    }}
+
+RULES:
+- Always start with [*] --> FirstState
+- Always end with at least one State --> [*]
+- Add transition labels (events/triggers)
+- Add state descriptions for clarity
+- Use composite states for complex flows
+- Max 10 states for clarity
+- State names: no spaces (use CamelCase)
+
+Text:
 {text}
 """

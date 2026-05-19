@@ -1,21 +1,42 @@
 def get_context_prompt(text: str) -> str:
     return f"""
-Analyze the text below following these steps to create a perfect Mermaid.js CONTEXT DIAGRAM:
+You are an expert software architect. Create a professional Mermaid.js Context Diagram (Level 0 DFD).
+Output ONLY valid Mermaid code. No explanation. No markdown. No code blocks.
 
-STEP 1: Identify the main system at the center.
-STEP 2: Identify all external entities (users, systems, services) that interact with the system.
-STEP 3: Determine the data flows between external entities and the system.
-STEP 4: Label each data flow clearly.
-STEP 5: Output ONLY the final Mermaid code.
+STRICT SYNTAX RULES:
+- Start with: flowchart LR
+- Main system: MainSystem([System Name])
+- External entities: Entity[Entity Name]
+- Data flows: A -->|data description| B
+- Use clear, short data flow labels
 
-Rules for Output:
-- Start with 'flowchart LR'.
-- Central system as a rectangle: System[System Name]
-- External entities as rectangles: Entity[Entity Name]
-- Data flows as arrows with labels: Entity -->|data flow| System
-- Show bidirectional flows where needed
-- No explanations or extra text.
+CORRECT EXAMPLE:
+flowchart LR
+    Customer[Customer]
+    Admin[Admin]
+    PaymentGateway[Payment Gateway]
+    EmailService[Email Service]
+    MainSystem([E-Commerce System])
+    Database[(Database)]
 
-Text to Analyze:
+    Customer -->|Register/Login| MainSystem
+    Customer -->|Browse & Order| MainSystem
+    MainSystem -->|Order Confirmation| Customer
+    MainSystem -->|Payment Request| PaymentGateway
+    PaymentGateway -->|Payment Status| MainSystem
+    Admin -->|Manage Products| MainSystem
+    Admin -->|View Reports| MainSystem
+    MainSystem -->|Send Notifications| EmailService
+    MainSystem -->|Store/Retrieve Data| Database
+
+RULES:
+- System in center using double parentheses
+- External entities as rectangles
+- Database as cylinder: [(Name)]
+- Label ALL arrows with data description
+- Show bidirectional flows as two arrows
+- Max 8 external entities
+
+Text:
 {text}
 """
