@@ -5,6 +5,7 @@ from slowapi.errors import RateLimitExceeded
 from app.routes.generate import router as generate_router
 from app.routes.chat import router as chat_router
 from app.services.rate_limiter import limiter
+from app.routes.edit import router as edit_router
 
 app = FastAPI(
     title="AI Diagram Generator",
@@ -24,3 +25,4 @@ app.add_middleware(
 
 app.include_router(generate_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
+app.include_router(edit_router, prefix="/api")
