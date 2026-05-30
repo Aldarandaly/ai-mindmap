@@ -8,6 +8,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../data/diagram_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
@@ -29,6 +31,12 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   bool _webViewLoading = true;
   bool _copied = false;
 
+  // Chat state
+  String _currentDiagramCode = '';
+  final List<Map<String, String>> _chatHistory = [];
+  final TextEditingController _chatController = TextEditingController();
+  bool _isChatLoading = false;
+
   WebViewController? _webController;
   final _screenshotController = ScreenshotController();
   Uint8List? _capturedImage;
@@ -45,6 +53,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   @override
   void initState() {
     super.initState();
+    _currentDiagramCode = widget.diagram.diagramCode ?? '';
     _setupAnimations();
     _initWebView();
     Future.delayed(const Duration(seconds: 3), () {
@@ -89,7 +98,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
             await _captureWebView();
           },
         ))
-        ..loadHtmlString(_buildHtml(widget.diagram.diagramCode ?? ''));
+        ..loadHtmlString(_buildHtml(_currentDiagramCode));
     } catch (_) {
       _webController = null;
     }
@@ -115,8 +124,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   }
 
   Future<void> _copyCode() async {
-    final code = widget.diagram.diagramCode ?? '';
-    await Clipboard.setData(ClipboardData(text: code));
+    await Clipboard.setData(ClipboardData(text: _currentDiagramCode));
     HapticFeedback.lightImpact();
     _copyCtrl.forward().then((_) => _copyCtrl.reverse());
     setState(() => _copied = true);
@@ -129,8 +137,89 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
     _bannerCtrl.dispose();
     _viewCtrl.dispose();
     _copyCtrl.dispose();
+    _chatController.dispose();
     super.dispose();
   }
+
+  // ─── Chat Logic ───────────────────────────────────────────────
+
+  void _showChatSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) => _ChatSheet(
+          chatHistory: _chatHistory,
+          controller: _chatController,
+          isLoading: _isChatLoading,
+          onSend: (msg) async {
+            await _sendEditMessage(msg, setSheetState);
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _sendEditMessage(
+      String message, StateSetter setSheetState) async {
+    if (message.trim().isEmpty) return;
+
+    setSheetState(() {
+      _chatHistory.add({'role': 'user', 'content': message});
+      _isChatLoading = true;
+    });
+    _chatController.clear();
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:8000/api/edit'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'current_code': _currentDiagramCode,
+          'message': message,
+          'type': widget.diagram.type,
+          'history': _chatHistory
+              .map((m) => {'role': m['role'], 'content': m['content']})
+              .toList(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final newCode = data['diagram_code'] as String;
+        final reply = data['reply'] as String;
+
+        setSheetState(() {
+          _chatHistory.add({'role': 'assistant', 'content': reply});
+          _isChatLoading = false;
+        });
+
+        setState(() => _currentDiagramCode = newCode);
+
+        // Live update WebView
+        _webController?.loadHtmlString(_buildHtml(newCode));
+      } else {
+        setSheetState(() {
+          _chatHistory.add({
+            'role': 'assistant',
+            'content': 'Something went wrong. Please try again.',
+          });
+          _isChatLoading = false;
+        });
+      }
+    } catch (e) {
+      setSheetState(() {
+        _chatHistory.add({
+          'role': 'assistant',
+          'content': 'Connection error. Check your network.',
+        });
+        _isChatLoading = false;
+      });
+    }
+  }
+
+  // ─── Build ────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -178,8 +267,10 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
       child: GestureDetector(
         onTap: _dismissBanner,
         child: Container(
-          margin: const EdgeInsets.fromLTRB(AppSizes.md, AppSizes.sm, AppSizes.md, 0),
-          padding: const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: 11),
+          margin: const EdgeInsets.fromLTRB(
+              AppSizes.md, AppSizes.sm, AppSizes.md, 0),
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.md, vertical: 11),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -195,7 +286,9 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                   borderRadius: BorderRadius.circular(AppSizes.radiusSm),
                 ),
                 child: Icon(
-                  isDone ? Icons.check_rounded : Icons.hourglass_top_rounded,
+                  isDone
+                      ? Icons.check_rounded
+                      : Icons.hourglass_top_rounded,
                   size: 15,
                   color: color,
                 ),
@@ -213,7 +306,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                   ),
                 ),
               ),
-              Icon(Icons.close_rounded, size: 15, color: color.withValues(alpha: 0.7)),
+              Icon(Icons.close_rounded,
+                  size: 15, color: color.withValues(alpha: 0.7)),
             ],
           ),
         ),
@@ -223,7 +317,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
 
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSizes.md, AppSizes.sm, AppSizes.md, 0),
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.md, AppSizes.sm, AppSizes.md, 0),
       child: Row(
         children: [
           GestureDetector(
@@ -234,7 +329,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.10)),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -249,7 +345,9 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.diagram.name.isNotEmpty ? widget.diagram.name : 'Untitled',
+                  widget.diagram.name.isNotEmpty
+                      ? widget.diagram.name
+                      : 'Untitled',
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: AppSizes.fontLg,
@@ -279,7 +377,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.10)),
               ),
               child: const Icon(
                 Icons.more_horiz_rounded,
@@ -295,13 +394,15 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
 
   Widget _buildToggle() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSizes.md, AppSizes.md, AppSizes.md, 0),
+      padding: const EdgeInsets.fromLTRB(
+          AppSizes.md, AppSizes.md, AppSizes.md, 0),
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(AppSizes.radiusRound),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border:
+              Border.all(color: Colors.white.withValues(alpha: 0.08)),
         ),
         child: Row(
           children: [
@@ -335,7 +436,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Screenshot(
@@ -355,8 +457,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                         height: 36,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(AppColors.primary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary),
                         ),
                       ),
                       const SizedBox(height: AppSizes.md),
@@ -389,7 +491,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               height: 80,
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(AppSizes.radiusXl),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.radiusXl),
               ),
               child: const Icon(Icons.auto_awesome_rounded,
                   size: 36, color: AppColors.primary),
@@ -416,15 +519,18 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
             GestureDetector(
               onTap: () => _switchView(true),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 13),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 28, vertical: 13),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [AppColors.primary, AppColors.accent],
                   ),
-                  borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                  borderRadius:
+                      BorderRadius.circular(AppSizes.radiusRound),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.4),
+                      color:
+                          AppColors.primary.withValues(alpha: 0.4),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -433,7 +539,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.code_rounded, size: 16, color: Colors.white),
+                    Icon(Icons.code_rounded,
+                        size: 16, color: Colors.white),
                     SizedBox(width: 6),
                     Text(
                       'View Code',
@@ -458,7 +565,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
         children: [
@@ -468,10 +576,13 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                    color:
+                        AppColors.primary.withValues(alpha: 0.14),
+                    borderRadius:
+                        BorderRadius.circular(AppSizes.radiusRound),
                   ),
                   child: const Text(
                     'Mermaid',
@@ -489,15 +600,19 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                     onTap: _copyCode,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 250),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
                         color: _copied
-                            ? AppColors.success.withValues(alpha: 0.15)
+                            ? AppColors.success
+                                .withValues(alpha: 0.15)
                             : Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                        borderRadius: BorderRadius.circular(
+                            AppSizes.radiusRound),
                         border: Border.all(
                           color: _copied
-                              ? AppColors.success.withValues(alpha: 0.4)
+                              ? AppColors.success
+                                  .withValues(alpha: 0.4)
                               : Colors.white.withValues(alpha: 0.12),
                         ),
                       ),
@@ -505,9 +620,13 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _copied ? Icons.check_rounded : Icons.copy_rounded,
+                            _copied
+                                ? Icons.check_rounded
+                                : Icons.copy_rounded,
                             size: 13,
-                            color: _copied ? AppColors.success : AppColors.textSecondary,
+                            color: _copied
+                                ? AppColors.success
+                                : AppColors.textSecondary,
                           ),
                           const SizedBox(width: 5),
                           Text(
@@ -528,12 +647,14 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               ],
             ),
           ),
-          Divider(height: 1, color: Colors.white.withValues(alpha: 0.07)),
+          Divider(
+              height: 1,
+              color: Colors.white.withValues(alpha: 0.07)),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppSizes.md),
               child: SelectableText(
-                widget.diagram.diagramCode ?? '',
+                _currentDiagramCode,
                 style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontFamily: 'monospace',
@@ -592,11 +713,13 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
       decoration: BoxDecoration(
         color: AppColors.surfaceDark.withValues(alpha: 0.9),
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+          top: BorderSide(
+              color: Colors.white.withValues(alpha: 0.07)),
         ),
       ),
       child: Row(
         children: [
+          // Export button
           Expanded(
             child: GestureDetector(
               onTap: _isExporting ? null : _showExportSheet,
@@ -606,17 +729,20 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                   gradient: LinearGradient(
                     colors: _isExporting
                         ? [
-                            AppColors.primary.withValues(alpha: 0.5),
+                            AppColors.primary
+                                .withValues(alpha: 0.5),
                             AppColors.accent.withValues(alpha: 0.5),
                           ]
                         : [AppColors.primary, AppColors.accent],
                   ),
-                  borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                  borderRadius:
+                      BorderRadius.circular(AppSizes.radiusRound),
                   boxShadow: _isExporting
                       ? []
                       : [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.4),
+                            color: AppColors.primary
+                                .withValues(alpha: 0.4),
                             blurRadius: 16,
                             offset: const Offset(0, 5),
                           ),
@@ -630,7 +756,8 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                             width: 18,
                             height: 18,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white),
                           )
                         : const Icon(Icons.download_rounded,
                             size: 18, color: Colors.white),
@@ -649,6 +776,35 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
             ),
           ),
           const SizedBox(width: AppSizes.sm),
+          // AI Chat button
+          GestureDetector(
+            onTap: _showChatSheet,
+            child: Container(
+              width: AppSizes.buttonHeight,
+              height: AppSizes.buttonHeight,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6C63FF), Color(0xFF9B59B6)],
+                ),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.radiusRound),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                size: AppSizes.iconMd,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          // Toggle preview/code button
           GestureDetector(
             onTap: () => _switchView(!_showCode),
             child: Container(
@@ -656,11 +812,15 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               height: AppSizes.buttonHeight,
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.07),
-                borderRadius: BorderRadius.circular(AppSizes.radiusRound),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                borderRadius:
+                    BorderRadius.circular(AppSizes.radiusRound),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.10)),
               ),
               child: Icon(
-                _showCode ? Icons.visibility_rounded : Icons.code_rounded,
+                _showCode
+                    ? Icons.visibility_rounded
+                    : Icons.code_rounded,
                 size: AppSizes.iconMd,
                 color: AppColors.textSecondary,
               ),
@@ -681,8 +841,10 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
         padding: const EdgeInsets.all(AppSizes.lg),
         decoration: BoxDecoration(
           color: const Color(0xFF131B2E),
-          borderRadius: BorderRadius.circular(AppSizes.radiusXl + 4),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+          borderRadius:
+              BorderRadius.circular(AppSizes.radiusXl + 4),
+          border: Border.all(
+              color: Colors.white.withValues(alpha: 0.10)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -722,7 +884,10 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               subtitle: 'High quality raster image',
               color1: AppColors.primary,
               color2: AppColors.accent,
-              onTap: () { Navigator.pop(context); _exportPNG(); },
+              onTap: () {
+                Navigator.pop(context);
+                _exportPNG();
+              },
             ),
             const SizedBox(height: AppSizes.sm),
             _ExportOption(
@@ -731,7 +896,10 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               subtitle: 'Vector quality for print',
               color1: const Color(0xFF9B59B6),
               color2: AppColors.primary,
-              onTap: () { Navigator.pop(context); _exportPDF(); },
+              onTap: () {
+                Navigator.pop(context);
+                _exportPDF();
+              },
             ),
             const SizedBox(height: AppSizes.sm),
             _ExportOption(
@@ -740,7 +908,10 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               subtitle: 'Share source code',
               color1: AppColors.accent,
               color2: const Color(0xFF9B59B6),
-              onTap: () { Navigator.pop(context); _exportCode(); },
+              onTap: () {
+                Navigator.pop(context);
+                _exportCode();
+              },
             ),
             const SizedBox(height: AppSizes.md),
             GestureDetector(
@@ -750,8 +921,10 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(AppSizes.radiusRound),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+                  borderRadius:
+                      BorderRadius.circular(AppSizes.radiusRound),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.10)),
                 ),
                 child: const Text(
                   'Cancel',
@@ -828,13 +1001,17 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
           await _screenshotController.capture(pixelRatio: 2.0);
       if (image == null) throw Exception('Could not capture diagram');
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/${widget.diagram.name}.png');
+      final file =
+          File('${dir.path}/${widget.diagram.name}.png');
       await file.writeAsBytes(image);
-      await Share.shareXFiles([XFile(file.path)], text: widget.diagram.name);
+      await Share.shareXFiles([XFile(file.path)],
+          text: widget.diagram.name);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Export failed: $e'),
+              backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -858,7 +1035,9 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(widget.diagram.name,
-                  style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+                  style: pw.TextStyle(
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 10),
               pw.Center(child: pw.Image(pdfImage)),
             ],
@@ -872,7 +1051,9 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Export failed: $e'),
+              backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -881,11 +1062,573 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   }
 
   void _exportCode() {
-    Share.share(widget.diagram.diagramCode ?? '', subject: widget.diagram.name);
+    Share.share(_currentDiagramCode, subject: widget.diagram.name);
   }
 }
 
-// Toggle Chip
+// ─── Chat Sheet Widget ─────────────────────────────────────────
+
+class _ChatSheet extends StatefulWidget {
+  final List<Map<String, String>> chatHistory;
+  final TextEditingController controller;
+  final bool isLoading;
+  final Future<void> Function(String) onSend;
+
+  const _ChatSheet({
+    required this.chatHistory,
+    required this.controller,
+    required this.isLoading,
+    required this.onSend,
+  });
+
+  @override
+  State<_ChatSheet> createState() => _ChatSheetState();
+}
+
+class _ChatSheetState extends State<_ChatSheet> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _handleSend() async {
+    final msg = widget.controller.text.trim();
+    if (msg.isEmpty || widget.isLoading) return;
+    await widget.onSend(msg);
+    _scrollToBottom();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _scrollToBottom();
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      margin: const EdgeInsets.fromLTRB(
+          AppSizes.sm, 0, AppSizes.sm, AppSizes.sm),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0E1628),
+        borderRadius: BorderRadius.circular(AppSizes.radiusXl + 4),
+        border: Border.all(
+            color: Colors.white.withValues(alpha: 0.10)),
+      ),
+      child: Column(
+        children: [
+          // Handle + Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSizes.md, AppSizes.md, AppSizes.md, 0),
+            child: Column(
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSizes.md),
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFF6C63FF),
+                            Color(0xFF00D4FF)
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'AI Diagram Editor',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: AppSizes.fontMd,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          'Ask me to modify your diagram',
+                          style: TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: AppSizes.fontXs,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.md),
+                Divider(
+                    height: 1,
+                    color: Colors.white.withValues(alpha: 0.07)),
+              ],
+            ),
+          ),
+
+          // Chat messages
+          Expanded(
+            child: widget.chatHistory.isEmpty
+                ? _buildEmptyChat()
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(AppSizes.md),
+                    itemCount: widget.chatHistory.length +
+                        (widget.isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == widget.chatHistory.length) {
+                        return _buildTypingIndicator();
+                      }
+                      final msg = widget.chatHistory[index];
+                      final isUser = msg['role'] == 'user';
+                      return _ChatBubble(
+                        message: msg['content'] ?? '',
+                        isUser: isUser,
+                      );
+                    },
+                  ),
+          ),
+
+          // Input field
+          Container(
+            padding: EdgeInsets.fromLTRB(
+              AppSizes.md,
+              AppSizes.sm,
+              AppSizes.md,
+              AppSizes.md +
+                  MediaQuery.of(context).viewInsets.bottom,
+            ),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.07)),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(
+                          AppSizes.radiusRound),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12)),
+                    ),
+                    child: TextField(
+                      controller: widget.controller,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: AppSizes.fontSm,
+                      ),
+                      decoration: InputDecoration(
+                        hintText:
+                            'e.g. Add a Payment class...',
+                        hintStyle: TextStyle(
+                          color: AppColors.textTertiary
+                              .withValues(alpha: 0.7),
+                          fontSize: AppSizes.fontSm,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(
+                          horizontal: AppSizes.md,
+                          vertical: AppSizes.sm + 2,
+                        ),
+                      ),
+                      onSubmitted: (_) => _handleSend(),
+                      enabled: !widget.isLoading,
+                      maxLines: 3,
+                      minLines: 1,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSizes.sm),
+                GestureDetector(
+                  onTap: widget.isLoading ? null : _handleSend,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: widget.isLoading
+                          ? LinearGradient(colors: [
+                              AppColors.primary
+                                  .withValues(alpha: 0.4),
+                              AppColors.accent
+                                  .withValues(alpha: 0.4),
+                            ])
+                          : const LinearGradient(colors: [
+                              AppColors.primary,
+                              AppColors.accent,
+                            ]),
+                      borderRadius: BorderRadius.circular(
+                          AppSizes.radiusRound),
+                      boxShadow: widget.isLoading
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: AppColors.primary
+                                    .withValues(alpha: 0.4),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                    ),
+                    child: widget.isLoading
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.send_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyChat() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.15),
+                  AppColors.accent.withValues(alpha: 0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.2)),
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              size: 28,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+          const Text(
+            'Edit with AI',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: AppSizes.fontMd,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSizes.xs),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Describe what you want to change and the diagram will update live',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.textTertiary,
+                fontSize: AppSizes.fontXs + 1,
+                height: 1.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSizes.lg),
+          // Suggestion chips
+          Wrap(
+            spacing: AppSizes.sm,
+            runSpacing: AppSizes.sm,
+            alignment: WrapAlignment.center,
+            children: const [
+              _SuggestionChip(label: '➕ Add a class'),
+              _SuggestionChip(label: '🔗 Add relationship'),
+              _SuggestionChip(label: '✏️ Rename entity'),
+              _SuggestionChip(label: '🗑️ Remove element'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypingIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6C63FF), Color(0xFF00D4FF)],
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.auto_awesome_rounded,
+                size: 14, color: Colors.white),
+          ),
+          const SizedBox(width: AppSizes.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.07),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _DotPulse(delay: 0),
+                const SizedBox(width: 4),
+                _DotPulse(delay: 200),
+                const SizedBox(width: 4),
+                _DotPulse(delay: 400),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Chat Bubble ──────────────────────────────────────────────
+
+class _ChatBubble extends StatelessWidget {
+  final String message;
+  final bool isUser;
+
+  const _ChatBubble({required this.message, required this.isUser});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6C63FF), Color(0xFF00D4FF)],
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.auto_awesome_rounded,
+                  size: 14, color: Colors.white),
+            ),
+            const SizedBox(width: AppSizes.sm),
+          ],
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: isUser
+                    ? const LinearGradient(
+                        colors: [
+                          Color(0xFF6C63FF),
+                          Color(0xFF9B59B6)
+                        ],
+                      )
+                    : null,
+                color: isUser
+                    ? null
+                    : Colors.white.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(isUser ? 16 : 4),
+                  topRight: Radius.circular(isUser ? 4 : 16),
+                  bottomLeft: const Radius.circular(16),
+                  bottomRight: const Radius.circular(16),
+                ),
+                border: isUser
+                    ? null
+                    : Border.all(
+                        color:
+                            Colors.white.withValues(alpha: 0.08)),
+                boxShadow: isUser
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary
+                              .withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        )
+                      ]
+                    : [],
+              ),
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: isUser
+                      ? Colors.white
+                      : AppColors.textSecondary,
+                  fontSize: AppSizes.fontSm,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ),
+          if (isUser) ...[
+            const SizedBox(width: AppSizes.sm),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color:
+                        AppColors.primary.withValues(alpha: 0.25)),
+              ),
+              child: const Icon(Icons.person_rounded,
+                  size: 16, color: AppColors.primary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Suggestion Chip ──────────────────────────────────────────
+
+class _SuggestionChip extends StatelessWidget {
+  final String label;
+  const _SuggestionChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+        border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.20)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: AppSizes.fontXs + 1,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Dot Pulse Animation ──────────────────────────────────────
+
+class _DotPulse extends StatefulWidget {
+  final int delay;
+  const _DotPulse({required this.delay});
+
+  @override
+  State<_DotPulse> createState() => _DotPulseState();
+}
+
+class _DotPulseState extends State<_DotPulse>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _anim = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _ctrl.repeat(reverse: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _anim,
+      child: Container(
+        width: 6,
+        height: 6,
+        decoration: BoxDecoration(
+          color: AppColors.textTertiary,
+          borderRadius: BorderRadius.circular(3),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Toggle Chip ──────────────────────────────────────────────
+
 class _ToggleChip extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -909,13 +1652,16 @@ class _ToggleChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           gradient: isSelected
-              ? const LinearGradient(colors: [AppColors.primary, AppColors.accent])
+              ? const LinearGradient(
+                  colors: [AppColors.primary, AppColors.accent])
               : null,
-          borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+          borderRadius:
+              BorderRadius.circular(AppSizes.radiusRound),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.35),
+                    color:
+                        AppColors.primary.withValues(alpha: 0.35),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -928,15 +1674,21 @@ class _ToggleChip extends StatelessWidget {
             Icon(
               icon,
               size: 14,
-              color: isSelected ? Colors.white : AppColors.textTertiary,
+              color: isSelected
+                  ? Colors.white
+                  : AppColors.textTertiary,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textTertiary,
+                color: isSelected
+                    ? Colors.white
+                    : AppColors.textTertiary,
                 fontSize: AppSizes.fontSm,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                fontWeight: isSelected
+                    ? FontWeight.w700
+                    : FontWeight.w400,
               ),
             ),
           ],
@@ -946,7 +1698,8 @@ class _ToggleChip extends StatelessWidget {
   }
 }
 
-// Export Option
+// ─── Export Option ────────────────────────────────────────────
+
 class _ExportOption extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -975,8 +1728,10 @@ class _ExportOption extends StatelessWidget {
           padding: const EdgeInsets.all(AppSizes.md),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            borderRadius:
+                BorderRadius.circular(AppSizes.radiusLg),
+            border: Border.all(
+                color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: Row(
             children: [
@@ -984,8 +1739,10 @@ class _ExportOption extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [color1, color2]),
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  gradient:
+                      LinearGradient(colors: [color1, color2]),
+                  borderRadius:
+                      BorderRadius.circular(AppSizes.radiusMd),
                   boxShadow: [
                     BoxShadow(
                       color: color1.withValues(alpha: 0.35),
@@ -994,7 +1751,8 @@ class _ExportOption extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(icon, color: Colors.white, size: AppSizes.iconMd),
+                child: Icon(icon,
+                    color: Colors.white, size: AppSizes.iconMd),
               ),
               const SizedBox(width: AppSizes.md),
               Expanded(
