@@ -2,19 +2,24 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\DiagramController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\PaymentController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/plans', [PaymentController::class, 'plans']);
 
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', [AuthController::class, 'profile']);
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::delete('/user', [AuthController::class, 'destroy']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
 
     Route::apiResource('projects', ProjectController::class)->only(['index', 'store', 'show']);
 
@@ -23,7 +28,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/projects/{project}/diagrams', [DiagramController::class, 'index']);
     Route::get('/diagrams/{diagram}', [DiagramController::class, 'show']);
 
+    Route::post('/payment/initiate', [PaymentController::class, 'initiate']);
+    Route::post('/payment/webhook', [PaymentController::class, 'webhook']); // Admin only later Route::post('/payment/approve', [ PaymentController::class, 'approve' ]); });
+
     Route::get('/projects/{project}/chats', [ChatController::class, 'index']);
     Route::post('/projects/{project}/chat', [ChatController::class, 'send']);
-    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
 });

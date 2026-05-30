@@ -61,4 +61,48 @@ class AuthRepository {
   }
 
   Future<bool> isLoggedIn() => _client.hasToken();
+
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await _client.post(
+        '/forgot-password',
+        data: {'email': email},
+      );
+      return {
+        'success': true,
+        'message': response['message'] ?? 'Reset link sent!',
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> resetPassword({
+  required String token,
+  required String email,
+  required String password,
+  required String passwordConfirmation,
+}) async {
+  try {
+    final response = await _client.post(
+      '/reset-password',
+      data: {
+        'token': token,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
+
+    return {
+      'success': true,
+      'message': response['message'] ?? 'Password reset successful',
+    };
+  } catch (e) {
+    return {
+      'success': false,
+      'message': e.toString(),
+    };
+  }
+}
 }

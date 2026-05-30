@@ -119,99 +119,127 @@ class _RecentScreenState extends State<RecentScreen>
 
   // ── Error ──────────────────────────────────────────────────────────────────
   Widget _buildError() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-              ),
-              child: const Icon(Icons.wifi_off_rounded,
-                  size: 34, color: AppColors.error),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            Text(
-              _error!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: AppSizes.fontMd),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            GestureDetector(
-              onTap: _loadRecent,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 28, vertical: 13),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.accent],
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(AppSizes.radiusRound),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.4),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+    return RefreshIndicator(
+      onRefresh: _loadRecent,
+      color: AppColors.primary,
+      backgroundColor: AppColors.surfaceDark,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSizes.xl),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.10),
+                        borderRadius:
+                            BorderRadius.circular(AppSizes.radiusXl),
+                      ),
+                      child: const Icon(Icons.wifi_off_rounded,
+                          size: 34, color: AppColors.error),
+                    ),
+                    const SizedBox(height: AppSizes.lg),
+                    Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: AppSizes.fontMd),
+                    ),
+                    const SizedBox(height: AppSizes.lg),
+                    GestureDetector(
+                      onTap: _loadRecent,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 28, vertical: 13),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, AppColors.accent],
+                          ),
+                          borderRadius: BorderRadius.circular(
+                              AppSizes.radiusRound),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  AppColors.primary.withValues(alpha: 0.4),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          'Try again',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: AppSizes.fontMd,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: const Text(
-                  'Try again',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: AppSizes.fontMd,
-                  ),
-                ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   // ── Empty ──────────────────────────────────────────────────────────────────
   Widget _buildEmpty() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-              border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.22)),
-            ),
-            child: const Icon(Icons.history_rounded,
-                size: 36, color: AppColors.primary),
-          ),
-          const SizedBox(height: AppSizes.lg),
-          const Text(
-            'No recent diagrams',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: AppSizes.fontXl,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: AppSizes.xs),
-          const Text(
-            'Generated diagrams will appear here',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: AppSizes.fontMd,
+    return RefreshIndicator(
+      onRefresh: _loadRecent,
+      color: AppColors.primary,
+      backgroundColor: AppColors.surfaceDark,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.10),
+                      borderRadius:
+                          BorderRadius.circular(AppSizes.radiusXl),
+                      border: Border.all(
+                          color:
+                              AppColors.primary.withValues(alpha: 0.22)),
+                    ),
+                    child: const Icon(Icons.history_rounded,
+                        size: 36, color: AppColors.primary),
+                  ),
+                  const SizedBox(height: AppSizes.lg),
+                  const Text(
+                    'No recent diagrams',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: AppSizes.fontXl,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.xs),
+                  const Text(
+                    'Generated diagrams will appear here',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: AppSizes.fontMd,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -226,6 +254,7 @@ class _RecentScreenState extends State<RecentScreen>
       color: AppColors.primary,
       backgroundColor: AppColors.surfaceDark,
       child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.only(
           left: AppSizes.screenPadding,
           right: AppSizes.screenPadding,

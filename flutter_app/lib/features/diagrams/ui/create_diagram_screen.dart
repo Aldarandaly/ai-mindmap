@@ -523,7 +523,8 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         children: [
           _buildGuideBox(),
           const SizedBox(height: AppSizes.lg),
-
+          _buildExampleBox(),
+          const SizedBox(height: AppSizes.lg),
           _buildLabel('Diagram Name'),
           const SizedBox(height: AppSizes.sm),
           _buildNameField(),
@@ -541,6 +542,276 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           ),
           const SizedBox(height: AppSizes.xl),
         ],
+      ),
+    );
+  }
+
+  Widget _buildExampleBox() {
+    final examples = {
+      'erd': (
+        title: 'ERD Example',
+        icon: Icons.storage_rounded,
+        color: Color(0xFF0D9488),
+        hints: [
+          'List your main tables/entities',
+          'Mention attributes & data types',
+          'Describe relationships (one-to-many)',
+          'Specify primary & foreign keys',
+        ],
+        example:
+            'I have a school system with Teachers, Students, and Classes. Each teacher teaches multiple classes. Each student enrolls in many classes. Teachers have: id, name, email, subject.',
+      ),
+      'class': (
+        title: 'Class Diagram Example',
+        icon: Icons.code_rounded,
+        color: Color(0xFF7C3AED),
+        hints: [
+          'List your main classes',
+          'Mention attributes & methods',
+          'Describe inheritance & associations',
+          'Specify access modifiers',
+        ],
+        example:
+            'E-commerce app with User, Product, Order, Payment classes. User can place multiple orders. Order contains multiple products. Payment belongs to one order.',
+      ),
+      'mindmap': (
+        title: 'Mind Map Example',
+        icon: Icons.hub_rounded,
+        color: Color(0xFFDB2777),
+        hints: [
+          'Start with the main topic',
+          'List main branches/categories',
+          'Add sub-topics under each branch',
+          'Keep it short — keywords only',
+        ],
+        example:
+            'Software Engineering main topics: Design Patterns, Testing, Deployment, Databases, Security, and DevOps.',
+      ),
+      'usecase': (
+        title: 'Use Case Example',
+        icon: Icons.person_rounded,
+        color: Color(0xFF0891B2),
+        hints: [
+          'List all actors (users/systems)',
+          'Describe main use cases/features',
+          'Mention actor-use case relationships',
+          'Include include/extend relationships',
+        ],
+        example:
+            'Library system: Librarian can add books, manage members. Member can search books, borrow and return books. System sends overdue notifications.',
+      ),
+      'sequence': (
+        title: 'Sequence Diagram Example',
+        icon: Icons.swap_horiz_rounded,
+        color: Color(0xFF059669),
+        hints: [
+          'List all participants/systems',
+          'Describe message sequence',
+          'Mention sync/async calls',
+          'Include responses & conditions',
+        ],
+        example:
+            'User login flow: User sends credentials to Frontend, Frontend calls AuthService, AuthService checks Database, Database returns user, AuthService generates JWT, Frontend redirects user.',
+      ),
+      'activity': (
+        title: 'Activity Diagram Example',
+        icon: Icons.alt_route_rounded,
+        color: Color(0xFFD97706),
+        hints: [
+          'Describe the process step by step',
+          'Mention decision points (if/else)',
+          'Include start and end points',
+          'Describe any parallel activities',
+        ],
+        example:
+            'Online order process: Customer browses products, adds to cart, proceeds to checkout. If logged in, shows payment. If not, prompt login first. After payment, confirm order and send email.',
+      ),
+      'context': (
+        title: 'Context Diagram Example',
+        icon: Icons.language_rounded,
+        color: Color(0xFF6C63FF),
+        hints: [
+          'Describe the main system',
+          'List all external entities',
+          'Describe data flows in/out',
+          'Mention external services used',
+        ],
+        example:
+            'Hospital management system interacts with: Patients (register, book appointments), Doctors (view schedules, update records), Lab (send test requests, receive results), Insurance (billing).',
+      ),
+      'state': (
+        title: 'State Diagram Example',
+        icon: Icons.timeline_rounded,
+        color: Color(0xFFEA580C),
+        hints: [
+          'List all possible states',
+          'Describe transitions between states',
+          'Mention triggers for each transition',
+          'Include initial and final states',
+        ],
+        example:
+            'Order lifecycle: Created → Confirmed (payment received) → Processing → Shipped → Delivered. Can also go to Cancelled from Created or Confirmed. Failed payment goes back to Created.',
+      ),
+      'dfd': (
+        title: 'DFD Example',
+        icon: Icons.account_tree_rounded,
+        color: Color(0xFF16A34A),
+        hints: [
+          'List external entities (sources/sinks)',
+          'Describe all processes',
+          'Mention data stores (databases)',
+          'Describe data flows between them',
+        ],
+        example:
+            'Student submits assignment to the system. System validates and stores in Assignment DB. Teacher retrieves assignments, grades them, stores grades in Grade DB. System notifies student.',
+      ),
+      'gantt': (
+        title: 'Gantt Chart Example',
+        icon: Icons.bar_chart_rounded,
+        color: Color(0xFFC026D3),
+        hints: [
+          'List all project phases/sections',
+          'Describe tasks within each phase',
+          'Mention task durations',
+          'Describe task dependencies',
+        ],
+        example:
+            'Mobile app project: Planning (2 weeks) → Design (3 weeks) → Backend development (6 weeks, starts after design) → Frontend development (6 weeks, parallel with backend) → Testing (2 weeks) → Launch.',
+      ),
+    };
+
+    final data = examples[_selectedType];
+    if (data == null) return const SizedBox.shrink();
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: Container(
+        key: ValueKey(_selectedType),
+        padding: const EdgeInsets.all(AppSizes.md),
+        decoration: BoxDecoration(
+          color: data.color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+          border: Border.all(color: data.color.withValues(alpha: 0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title
+            Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: data.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(data.icon, color: data.color, size: 16),
+                ),
+                const SizedBox(width: AppSizes.sm),
+                Text(
+                  data.title,
+                  style: TextStyle(
+                    fontSize: AppSizes.fontSm,
+                    fontWeight: FontWeight.w700,
+                    color: data.color,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSizes.sm),
+
+            // Hints
+            ...data.hints.map(
+              (hint) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.check_circle_rounded,
+                      size: 13,
+                      color: data.color,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        hint,
+                        style: TextStyle(
+                          fontSize: AppSizes.fontXs,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: AppSizes.sm),
+            const Divider(color: AppColors.border),
+            const SizedBox(height: AppSizes.xs),
+
+            // Example
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('💡 ', style: TextStyle(fontSize: 12)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Example prompt:',
+                        style: TextStyle(
+                          fontSize: AppSizes.fontXs,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      GestureDetector(
+                        onTap: () {
+                          _descriptionController.text = data.example;
+                          setState(
+                            () => _descriptionLength = data.example.length,
+                          );
+                        },
+                        child: Text(
+                          data.example,
+                          style: TextStyle(
+                            fontSize: AppSizes.fontXs,
+                            color: AppColors.textSecondary,
+                            fontStyle: FontStyle.italic,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: () {
+                          _descriptionController.text = data.example;
+                          setState(
+                            () => _descriptionLength = data.example.length,
+                          );
+                        },
+                        child: Text(
+                          'Tap to use this example →',
+                          style: TextStyle(
+                            fontSize: AppSizes.fontXs,
+                            color: data.color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
