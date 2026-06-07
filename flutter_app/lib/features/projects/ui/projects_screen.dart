@@ -119,13 +119,18 @@ class _ProjectsBodyState extends State<ProjectsBody>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => CreateProjectModal(
-        onCreated: (project) {
-          setState(() {
-            _projects.insert(0, project);
-            _filtered = _projects;
-          });
-        },
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).padding.bottom + 8, 
+        ),
+        child: CreateProjectModal(
+          onCreated: (project) {
+            setState(() {
+              _projects.insert(0, project);
+              _filtered = _projects;
+            });
+          },
+        ),
       ),
     );
   }
