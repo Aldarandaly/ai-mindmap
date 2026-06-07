@@ -37,56 +37,50 @@ class PaymentController extends Controller
     // Initiate payment
     public function initiate(Request $request, PaymobService $paymob)
     {
-        $request->validate([
-            'plan' => 'required|in:pro,enterprise',
-            'billing_cycle' => 'required|in:monthly,annual',
-        ]);
+        try {
+            $request->validate([
+                'plan' => 'required|in:pro,enterprise',
+                'billing_cycle' => 'required|in:monthly,annual',
+            ]);
 
-        $amount = PlanService::PRICES[$request->plan][$request->billing_cycle];
+            $amount = PlanService::PRICES[$request->plan][$request->billing_cycle];
 
-        // 1. create subscription (pending)
-        $subscription = Subscription::create([
-            'user_id' => $request->user()->id,
-            'plan' => $request->plan,
-            'billing_cycle' => $request->billing_cycle,
-            'amount' => $amount,
-            'payment_method' => 'paymob',
-            'status' => 'pending',
-        ]);
+            $subscription = Subscription::create([
+                'user_id'        => $request->user()->id,
+                'plan'           => $request->plan,
+                'billing_cycle'  => $request->billing_cycle,
+                'amount'         => $amount,
+                'payment_method' => 'paymob',
+                'status'         => 'pending',
+            ]);
 
-        // 2. auth
-        $token = $paymob->auth();
+            $token = $paymob->auth();
 
-        // 3. order
-        $order = $paymob->createOrder($token, $amount, $subscription->id);
+            $order = $paymob->createOrder($token, $amount, $subscription->id . '_' . time());
 
-        // 4. payment key
-        $paymentKey = $paymob->paymentKey(
-            $token,
-            $order['id'],
-            $amount,
-            [
-                "first_name" => $request->user()->name,
-                "last_name" => "user",
-                "email" => $request->user()->email,
+            $paymentKey = $paymob->paymentKey($token, $order['id'], $amount, [
+                "first_name"   => $request->user()->name,
+                "last_name"    => "user",
+                "email"        => $request->user()->email,
                 "phone_number" => "01000000000",
-                "city" => "Cairo",
-                "country" => "EG",
-                "street" => "NA",
-                "building" => "NA",
-                "floor" => "NA",
-                "apartment" => "NA"
-            ]
-        );
+                "city"         => "Cairo",
+                "country"      => "EG",
+                "street"       => "NA",
+                "building"     => "NA",
+                "floor"        => "NA",
+                "apartment"    => "NA",
+            ]);
 
-        $iframeId = env('PAYMOB_IFRAME_ID');
 
-        $paymentUrl = "https://accept.paymob.com/api/acceptance/iframes/{$iframeId}?payment_token="
-            . $paymentKey['token'];
+            $iframeId = env('PAYMOB_IFRAME_ID');
+            $paymentUrl = "https://accept.paymob.com/api/acceptance/iframes/{$iframeId}?payment_token="
+                . $paymentKey['token'];
 
-        return response()->json([
-            'payment_url' => $paymentUrl
-        ]);
+            return response()->json(['payment_url' => $paymentUrl]);
+        } catch (\Exception $e) {
+
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function webhook(Request $request)
@@ -181,7 +175,41 @@ class PaymentController extends Controller
             'message' => 'Subscription approved successfully.',
         ]);
     }
+    public function confirmSuccess(Request $request)
+    {
+        \Illuminate\Support\Facades\Log::info('confirmSuccess called for user: ' . $request->user()->id);
 
+        $request->validate([
+            'plan'          => 'required|in:pro,enterprise',
+            'billing_cycle' => 'required|in:monthly,annual',
+        ]);
+
+        $expiresAt = $request->billing_cycle === 'annual'
+            ? now()->addYear()
+            : now()->addMonth();
+
+        \Illuminate\Support\Facades\Log::info('User ID: ' . $request->user()->id . ' Plan before: ' . $request->user()->plan);
+
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $request->user()->id)
+            ->update([
+                'plan'            => $request->plan,
+                'billing_cycle'   => $request->billing_cycle,
+                'plan_started_at' => now(),
+                'plan_expires_at' => $expiresAt,
+            ]);
+
+        $freshPlan = \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $request->user()->id)
+            ->value('plan');
+
+        \Illuminate\Support\Facades\Log::info('Plan after update: ' . $freshPlan);
+
+        return response()->json([
+            'message' => 'Plan activated successfully',
+            'plan'    => $freshPlan,
+        ]);
+    }
     // Cancel subscription
     public function cancel(Request $request)
     {

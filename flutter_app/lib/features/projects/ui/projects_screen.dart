@@ -159,7 +159,7 @@ class _ProjectsBodyState extends State<ProjectsBody>
   // ───────────────────────── HEADER
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.screenPadding,
         AppSizes.lg,
         AppSizes.screenPadding,

@@ -20,4 +20,15 @@ class AIService
 
         throw new \Exception('AI service error: ' . $response->body());
     }
+    public function editDiagram(string $code, string $message, string $type, array $history): array
+    {
+        $response = Http::post(env('PYTHON_API_URL') . '/api/edit', [
+            'current_code' => $code,
+            'message'      => $message,
+            'type'         => $type,
+            'history'      => $history,
+        ]);
+
+        return $response->json();
+    }
 }

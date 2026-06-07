@@ -46,13 +46,13 @@ class _AppTextFieldState extends State<AppTextField> {
       children: [
         Text(
           widget.label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppSizes.fontSm,
             fontWeight: FontWeight.w500,
             color: AppColors.textSecondary,
           ),
         ),
-        const SizedBox(height: AppSizes.xs),
+        SizedBox(height: AppSizes.xs),
         TextFormField(
           controller: widget.controller,
           obscureText: widget.isPassword && _obscure,
@@ -62,13 +62,13 @@ class _AppTextFieldState extends State<AppTextField> {
           maxLines: widget.isPassword ? 1 : widget.maxLines,
           maxLength: widget.maxLength,
           readOnly: widget.readOnly,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppSizes.fontMd,
             color: AppColors.textPrimary,
           ),
           decoration: InputDecoration(
             hintText: widget.hint,
-            hintStyle: const TextStyle(
+            hintStyle: TextStyle(
               color: AppColors.textTertiary,
               fontSize: AppSizes.fontMd,
             ),
@@ -93,7 +93,7 @@ class _AppTextFieldState extends State<AppTextField> {
                 : widget.suffix,
             filled: true,
             fillColor: AppColors.surface,
-            contentPadding: const EdgeInsets.symmetric(
+            contentPadding: EdgeInsets.symmetric(
               horizontal: AppSizes.md,
               vertical: AppSizes.md,
             ),

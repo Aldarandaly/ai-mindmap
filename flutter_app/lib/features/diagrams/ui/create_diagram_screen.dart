@@ -1,14 +1,30 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_text_styles.dart';
+import '../../diagrams/data/diagram_model.dart';
 import '../data/diagram_repository.dart';
-import 'diagram_viewer_screen.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_text_styles.dart';
+import '../../../core/constants/app_sizes.dart';
+import '../../payment/ui/plans_screen.dart';
+import '../../../core/network/api_client.dart';
+import '../../diagrams/ui/diagram_viewer_screen.dart';
+
+class _DiagramType {
+  final String key;
+  final String label;
+  final IconData icon;
+  final String description;
+
+  const _DiagramType({
+    required this.key,
+    required this.label,
+    required this.icon,
+    required this.description,
+  });
+}
 
 class CreateDiagramScreen extends StatefulWidget {
   final int projectId;
-
   const CreateDiagramScreen({super.key, required this.projectId});
 
   @override
@@ -24,12 +40,14 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   final TextEditingController _descriptionController = TextEditingController();
 
   String? _selectedType;
+  String _userPlan = 'free';
   bool _isGenerating = false;
   bool _hasError = false;
   String _errorMessage = '';
-  double _generatingProgress = 0.0;
   int _descriptionLength = 0;
   static const int _maxDescriptionLength = 1000;
+
+  final List<String> _freeDiagramTypes = ['erd', 'class', 'mindmap'];
 
   late AnimationController _pulseController;
   late AnimationController _progressController;
@@ -111,12 +129,10 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
-
     _progressController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 30),
     );
-
     _errorSlideController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -125,19 +141,36 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-
     _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
     );
-
     _errorSlideAnimation =
         Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
           CurvedAnimation(parent: _errorSlideController, curve: Curves.easeOut),
         );
 
-    _descriptionController.addListener(() {
-      setState(() => _descriptionLength = _descriptionController.text.length);
-    });
+    _descriptionController.addListener(
+      () => setState(
+        () => _descriptionLength = _descriptionController.text.length,
+      ),
+    );
+
+    // ← load plan هنا برضو عشان أول مرة
+    _loadUserPlan();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ← بيتعمل كل مرة الـ screen يظهر تاني
+    _loadUserPlan();
+  }
+
+  Future<void> _loadUserPlan() async {
+    try {
+      final response = await ApiClient().get('/plan/current');
+      if (mounted) setState(() => _userPlan = response['plan'] ?? 'free');
+    } catch (_) {}
   }
 
   @override
@@ -160,11 +193,10 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   }
 
   void _onBack() {
-    if (_currentPage == 1) {
+    if (_currentPage == 1)
       _goToPage(0);
-    } else {
+    else
       Navigator.of(context).pop();
-    }
   }
 
   void _onNext() {
@@ -190,7 +222,90 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-  // ─── Generate ─────────────────────────────────────────────────────────────
+  void _showUpgradeDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1828),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, Color(0xFF7C3AED)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.workspace_premium_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Upgrade to Pro',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'This diagram type is only available on Pro and Enterprise plans.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.white60,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PlansScreen()),
+                  );
+                  _loadUserPlan(); // ← reload بعد ما يرجع
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  ),
+                ),
+                child: const Text(
+                  'View Plans',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(
+                'Maybe later',
+                style: TextStyle(color: Colors.white38),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _generate() async {
     if (_nameController.text.trim().isEmpty) {
@@ -205,9 +320,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     setState(() {
       _isGenerating = true;
       _hasError = false;
-      _generatingProgress = 0.0;
     });
-
     _progressController.forward(from: 0);
 
     try {
@@ -217,9 +330,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         type: _selectedType!,
         description: _descriptionController.text.trim(),
       );
-
       if (!mounted) return;
-
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => DiagramViewerScreen(diagram: diagram),
@@ -236,8 +347,6 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       _progressController.stop();
     }
   }
-
-  // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -279,11 +388,9 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-  // ─── AppBar ───────────────────────────────────────────────────────────────
-
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.screenPadding,
         AppSizes.md,
         AppSizes.screenPadding,
@@ -308,7 +415,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
               ),
             ),
           ),
-          const SizedBox(width: AppSizes.md),
+          SizedBox(width: AppSizes.md),
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
@@ -327,11 +434,9 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-  // ─── Step Indicator ───────────────────────────────────────────────────────
-
   Widget _buildStepIndicator() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.screenPadding,
         0,
         AppSizes.screenPadding,
@@ -394,7 +499,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   Widget _buildStepConnector(bool isActive) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm),
+        padding: EdgeInsets.symmetric(horizontal: AppSizes.sm),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 400),
           height: 2,
@@ -412,16 +517,12 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-  // ─── Page 1: Type Selector ────────────────────────────────────────────────
-
   Widget _buildPage1TypeSelector() {
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSizes.screenPadding,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
             itemCount: _diagramTypes.length,
             itemBuilder: (context, index) {
               final item = _diagramTypes[index];
@@ -431,7 +532,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(AppSizes.screenPadding),
+          padding: EdgeInsets.all(AppSizes.screenPadding),
           child: _buildGradientButton(
             label: 'Continue',
             trailingIcon: Icons.arrow_forward_rounded,
@@ -443,19 +544,32 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   }
 
   Widget _buildTypeCard(Map<String, dynamic> item, bool isSelected) {
+    final isFree = _userPlan == 'free';
+    final isLocked = isFree && !_freeDiagramTypes.contains(item['type']);
+
     return GestureDetector(
-      onTap: () => setState(() => _selectedType = item['type']),
+      onTap: () {
+        if (isLocked) {
+          _showUpgradeDialog();
+          return;
+        }
+        setState(() => _selectedType = item['type']);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(AppSizes.md),
+        padding: EdgeInsets.all(AppSizes.md),
         decoration: BoxDecoration(
-          color: isSelected
+          color: isLocked
+              ? Colors.white.withValues(alpha: 0.02)
+              : isSelected
               ? AppColors.primary.withValues(alpha: 0.12)
               : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(AppSizes.radiusLg),
           border: Border.all(
-            color: isSelected
+            color: isLocked
+                ? Colors.white.withValues(alpha: 0.05)
+                : isSelected
                 ? AppColors.primary.withValues(alpha: 0.6)
                 : Colors.white.withValues(alpha: 0.10),
             width: isSelected ? 1.5 : 1,
@@ -467,41 +581,89 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: isSelected
+                color: isLocked
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : isSelected
                     ? AppColors.primary.withValues(alpha: 0.20)
                     : Colors.white.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(AppSizes.radiusMd),
               ),
               child: Icon(
                 item['icon'] as IconData,
-                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+                color: isLocked
+                    ? AppColors.textTertiary.withValues(alpha: 0.4)
+                    : isSelected
+                    ? AppColors.primary
+                    : AppColors.textTertiary,
                 size: 22,
               ),
             ),
-            const SizedBox(width: AppSizes.md),
+            SizedBox(width: AppSizes.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item['label'] as String,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isSelected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        item['label'] as String,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isLocked
+                              ? AppColors.textTertiary.withValues(alpha: 0.4)
+                              : isSelected
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (isLocked) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFFFFB800,
+                            ).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: const Color(
+                                0xFFFFB800,
+                              ).withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: const Text(
+                            'PRO',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Color(0xFFFFB800),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   Text(
                     item['desc'] as String,
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textTertiary,
+                      color: isLocked
+                          ? AppColors.textTertiary.withValues(alpha: 0.3)
+                          : AppColors.textTertiary,
                     ),
                   ),
                 ],
               ),
             ),
-            if (isSelected)
+            if (isLocked)
+              Icon(
+                Icons.lock_rounded,
+                size: 16,
+                color: AppColors.textTertiary.withValues(alpha: 0.4),
+              )
+            else if (isSelected)
               const Icon(
                 Icons.check_circle_rounded,
                 color: AppColors.primary,
@@ -513,34 +675,68 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-  // ─── Page 2: Describe Form ────────────────────────────────────────────────
-
   Widget _buildPage2DescribeForm() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSizes.screenPadding),
+      padding: EdgeInsets.all(AppSizes.screenPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildGuideBox(),
-          const SizedBox(height: AppSizes.lg),
+          SizedBox(height: AppSizes.md),
           _buildExampleBox(),
-          const SizedBox(height: AppSizes.lg),
+          SizedBox(height: AppSizes.lg),
           _buildLabel('Diagram Name'),
-          const SizedBox(height: AppSizes.sm),
+          SizedBox(height: AppSizes.sm),
           _buildNameField(),
-          const SizedBox(height: AppSizes.lg),
-
+          SizedBox(height: AppSizes.lg),
           _buildLabel('Description'),
-          const SizedBox(height: AppSizes.sm),
+          SizedBox(height: AppSizes.sm),
           _buildDescriptionField(),
-          const SizedBox(height: AppSizes.xl),
-
+          SizedBox(height: AppSizes.xl),
           _buildGradientButton(
             label: 'Generate Diagram',
             leadingSymbol: '✦',
             onTap: _generate,
           ),
-          const SizedBox(height: AppSizes.xl),
+          SizedBox(height: AppSizes.xl),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuideBox() {
+    return Container(
+      padding: EdgeInsets.all(AppSizes.md),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.30)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+            ),
+            child: const Icon(
+              Icons.lightbulb_outline_rounded,
+              color: AppColors.primary,
+              size: 18,
+            ),
+          ),
+          SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              'Be specific! The more detail you provide, the better the generated diagram.',
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -687,7 +883,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       duration: const Duration(milliseconds: 300),
       child: Container(
         key: ValueKey(_selectedType),
-        padding: const EdgeInsets.all(AppSizes.md),
+        padding: EdgeInsets.all(AppSizes.md),
         decoration: BoxDecoration(
           color: data.color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(AppSizes.radiusLg),
@@ -696,7 +892,6 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
             Row(
               children: [
                 Container(
@@ -708,7 +903,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                   ),
                   child: Icon(data.icon, color: data.color, size: 16),
                 ),
-                const SizedBox(width: AppSizes.sm),
+                SizedBox(width: AppSizes.sm),
                 Text(
                   data.title,
                   style: TextStyle(
@@ -719,9 +914,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                 ),
               ],
             ),
-            const SizedBox(height: AppSizes.sm),
-
-            // Hints
+            SizedBox(height: AppSizes.sm),
             ...data.hints.map(
               (hint) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -748,16 +941,13 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                 ),
               ),
             ),
-
-            const SizedBox(height: AppSizes.sm),
+            SizedBox(height: AppSizes.sm),
             const Divider(color: AppColors.border),
-            const SizedBox(height: AppSizes.xs),
-
-            // Example
+            SizedBox(height: AppSizes.xs),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('💡 ', style: TextStyle(fontSize: 12)),
+                const Text('💡 ', style: TextStyle(fontSize: 12)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -826,44 +1016,6 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-  Widget _buildGuideBox() {
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.md),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.30)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-            ),
-            child: const Icon(
-              Icons.lightbulb_outline_rounded,
-              color: AppColors.primary,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: AppSizes.sm),
-          Expanded(
-            child: Text(
-              'Be specific! The more detail you provide, the better the generated diagram.',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildNameField() {
     return TextFormField(
       controller: _nameController,
@@ -892,7 +1044,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
           borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         ),
-        contentPadding: const EdgeInsets.symmetric(
+        contentPadding: EdgeInsets.symmetric(
           horizontal: AppSizes.md,
           vertical: AppSizes.md,
         ),
@@ -938,7 +1090,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
               ),
               borderRadius: BorderRadius.circular(AppSizes.radiusMd),
             ),
-            contentPadding: const EdgeInsets.all(AppSizes.md),
+            contentPadding: EdgeInsets.all(AppSizes.md),
           ),
         ),
         const SizedBox(height: 6),
@@ -953,8 +1105,6 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
       ],
     );
   }
-
-  // ─── Shared Gradient Button ───────────────────────────────────────────────
 
   Widget _buildGradientButton({
     required String label,
@@ -990,7 +1140,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                 leadingSymbol,
                 style: const TextStyle(color: Colors.white, fontSize: 16),
               ),
-              const SizedBox(width: AppSizes.sm),
+              SizedBox(width: AppSizes.sm),
             ],
             Text(
               label,
@@ -1001,7 +1151,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
               ),
             ),
             if (trailingIcon != null) ...[
-              const SizedBox(width: AppSizes.sm),
+              SizedBox(width: AppSizes.sm),
               Icon(trailingIcon, color: Colors.white, size: 18),
             ],
           ],
@@ -1010,12 +1160,10 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-  // ─── Generating State ─────────────────────────────────────────────────────
-
   Widget _buildGeneratingState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSizes.xl),
+        padding: EdgeInsets.all(AppSizes.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1046,21 +1194,21 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                 ),
               ),
             ),
-            const SizedBox(height: AppSizes.xl),
+            SizedBox(height: AppSizes.xl),
             Text(
               'Generating your diagram...',
               style: AppTextStyles.headingSmall.copyWith(
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: AppSizes.sm),
+            SizedBox(height: AppSizes.sm),
             Text(
               'This may take a few seconds',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: AppSizes.xl),
+            SizedBox(height: AppSizes.xl),
             AnimatedBuilder(
               animation: _progressAnimation,
               builder: (_, __) => Column(
@@ -1076,7 +1224,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                       ),
                     ),
                   ),
-                  const SizedBox(height: AppSizes.sm),
+                  SizedBox(height: AppSizes.sm),
                   Text(
                     '${(_progressAnimation.value * 100).toInt()}%',
                     style: AppTextStyles.caption.copyWith(
@@ -1092,14 +1240,12 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
     );
   }
 
-  // ─── Error Banner ─────────────────────────────────────────────────────────
-
   Widget _buildErrorBanner() {
     return SlideTransition(
       position: _errorSlideAnimation,
       child: Container(
-        margin: const EdgeInsets.all(AppSizes.md),
-        padding: const EdgeInsets.all(AppSizes.md),
+        margin: EdgeInsets.all(AppSizes.md),
+        padding: EdgeInsets.all(AppSizes.md),
         decoration: BoxDecoration(
           color: AppColors.error.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -1120,7 +1266,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
                 size: 20,
               ),
             ),
-            const SizedBox(width: AppSizes.sm),
+            SizedBox(width: AppSizes.sm),
             Expanded(
               child: Text(
                 _errorMessage,

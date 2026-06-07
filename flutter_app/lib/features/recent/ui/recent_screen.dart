@@ -50,6 +50,7 @@ class _RecentScreenState extends State<RecentScreen>
 
   @override
   Widget build(BuildContext context) {
+    AppSizes.init(context);
     super.build(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -62,10 +63,10 @@ class _RecentScreenState extends State<RecentScreen>
               child: _isLoading
                   ? _buildShimmer()
                   : _error != null
-                      ? _buildError()
-                      : _diagrams.isEmpty
-                          ? _buildEmpty()
-                          : _buildList(),
+                  ? _buildError()
+                  : _diagrams.isEmpty
+                  ? _buildEmpty()
+                  : _buildList(),
             ),
           ],
         ),
@@ -76,7 +77,7 @@ class _RecentScreenState extends State<RecentScreen>
   // ── Header ─────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSizes.screenPadding,
         AppSizes.lg,
         AppSizes.screenPadding,
@@ -95,7 +96,7 @@ class _RecentScreenState extends State<RecentScreen>
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Last generated diagrams',
             style: TextStyle(
               color: AppColors.textTertiary,
@@ -110,8 +111,7 @@ class _RecentScreenState extends State<RecentScreen>
   // ── Shimmer ────────────────────────────────────────────────────────────────
   Widget _buildShimmer() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.screenPadding),
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
       itemCount: 5,
       itemBuilder: (context, index) => const _ShimmerCard(),
     );
@@ -129,7 +129,7 @@ class _RecentScreenState extends State<RecentScreen>
           SliverFillRemaining(
             child: Center(
               child: Padding(
-                padding: const EdgeInsets.all(AppSizes.xl),
+                padding: EdgeInsets.all(AppSizes.xl),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -138,42 +138,47 @@ class _RecentScreenState extends State<RecentScreen>
                       height: 72,
                       decoration: BoxDecoration(
                         color: AppColors.error.withValues(alpha: 0.10),
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.radiusXl),
+                        borderRadius: BorderRadius.circular(AppSizes.radiusXl),
                       ),
-                      child: const Icon(Icons.wifi_off_rounded,
-                          size: 34, color: AppColors.error),
+                      child: const Icon(
+                        Icons.wifi_off_rounded,
+                        size: 34,
+                        color: AppColors.error,
+                      ),
                     ),
-                    const SizedBox(height: AppSizes.lg),
+                    SizedBox(height: AppSizes.lg),
                     Text(
                       _error!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: AppSizes.fontMd),
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: AppSizes.fontMd,
+                      ),
                     ),
-                    const SizedBox(height: AppSizes.lg),
+                    SizedBox(height: AppSizes.lg),
                     GestureDetector(
                       onTap: _loadRecent,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 28, vertical: 13),
+                          horizontal: 28,
+                          vertical: 13,
+                        ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [AppColors.primary, AppColors.accent],
                           ),
                           borderRadius: BorderRadius.circular(
-                              AppSizes.radiusRound),
+                            AppSizes.radiusRound,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color:
-                                  AppColors.primary.withValues(alpha: 0.4),
+                              color: AppColors.primary.withValues(alpha: 0.4),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
                           ],
                         ),
-                        child: const Text(
+                        child: Text(
                           'Try again',
                           style: TextStyle(
                             color: Colors.white,
@@ -212,17 +217,19 @@ class _RecentScreenState extends State<RecentScreen>
                     height: 80,
                     decoration: BoxDecoration(
                       color: AppColors.primary.withValues(alpha: 0.10),
-                      borderRadius:
-                          BorderRadius.circular(AppSizes.radiusXl),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusXl),
                       border: Border.all(
-                          color:
-                              AppColors.primary.withValues(alpha: 0.22)),
+                        color: AppColors.primary.withValues(alpha: 0.22),
+                      ),
                     ),
-                    child: const Icon(Icons.history_rounded,
-                        size: 36, color: AppColors.primary),
+                    child: const Icon(
+                      Icons.history_rounded,
+                      size: 36,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  const SizedBox(height: AppSizes.lg),
-                  const Text(
+                  SizedBox(height: AppSizes.lg),
+                  Text(
                     'No recent diagrams',
                     style: TextStyle(
                       color: AppColors.textPrimary,
@@ -230,8 +237,8 @@ class _RecentScreenState extends State<RecentScreen>
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: AppSizes.xs),
-                  const Text(
+                  SizedBox(height: AppSizes.xs),
+                  Text(
                     'Generated diagrams will appear here',
                     style: TextStyle(
                       color: AppColors.textSecondary,
@@ -321,8 +328,7 @@ class _ShimmerCardState extends State<_ShimmerCard>
               AppColors.shimmerBase,
             ],
           ),
-          border: Border.all(
-              color: Colors.white.withValues(alpha: 0.07)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
         ),
       ),
     );

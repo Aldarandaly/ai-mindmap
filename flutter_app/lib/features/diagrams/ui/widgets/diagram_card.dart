@@ -39,12 +39,9 @@ class _DiagramCardState extends State<DiagramCard>
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
 
-    Future.delayed(
-      Duration(milliseconds: widget.index * 55),
-      () {
-        if (mounted) _ctrl.forward();
-      },
-    );
+    Future.delayed(Duration(milliseconds: widget.index * 55), () {
+      if (mounted) _ctrl.forward();
+    });
   }
 
   @override
@@ -72,7 +69,7 @@ class _DiagramCardState extends State<DiagramCard>
               borderRadius: BorderRadius.circular(AppSizes.cardRadius),
               splashColor: typeColor.withValues(alpha: 0.07),
               child: Container(
-                padding: const EdgeInsets.all(AppSizes.cardPadding),
+                padding: EdgeInsets.all(AppSizes.cardPadding),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(AppSizes.cardRadius),
@@ -144,14 +141,15 @@ class _DiagramCardState extends State<DiagramCard>
                       ),
                     ),
 
-                    const SizedBox(width: AppSizes.sm),
+                    SizedBox(width: AppSizes.sm),
                     Container(
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.06),
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.radiusSm + 2),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSm + 2,
+                        ),
                       ),
                       child: const Icon(
                         Icons.arrow_forward_ios_rounded,
@@ -171,59 +169,97 @@ class _DiagramCardState extends State<DiagramCard>
 
   Color _typeColor(String type) {
     switch (type) {
-      case 'erd':      return const Color(0xFF6C63FF);
-      case 'class':    return const Color(0xFF00D4FF);
-      case 'mindmap':  return const Color(0xFFFF6584);
-      case 'usecase':  return const Color(0xFF43E97B);
-      case 'sequence': return const Color(0xFFF7971E);
-      case 'activity': return const Color(0xFF9B59B6);
-      case 'context':  return const Color(0xFF00B4D8);
-      case 'state':    return const Color(0xFFFF9A9E);
-      case 'dfd':      return const Color(0xFF56CCF2);
-      case 'gantt':    return const Color(0xFFF2994A);
-      default:         return AppColors.primary;
+      case 'erd':
+        return const Color(0xFF6C63FF);
+      case 'class':
+        return const Color(0xFF00D4FF);
+      case 'mindmap':
+        return const Color(0xFFFF6584);
+      case 'usecase':
+        return const Color(0xFF43E97B);
+      case 'sequence':
+        return const Color(0xFFF7971E);
+      case 'activity':
+        return const Color(0xFF9B59B6);
+      case 'context':
+        return const Color(0xFF00B4D8);
+      case 'state':
+        return const Color(0xFFFF9A9E);
+      case 'dfd':
+        return const Color(0xFF56CCF2);
+      case 'gantt':
+        return const Color(0xFFF2994A);
+      default:
+        return AppColors.primary;
     }
   }
 
   Color _typeColor2(String type) {
     switch (type) {
-      case 'erd':      return const Color(0xFF00D4FF);
-      case 'class':    return const Color(0xFF6C63FF);
-      case 'mindmap':  return const Color(0xFFFFA07A);
-      case 'usecase':  return const Color(0xFF38F9D7);
-      case 'sequence': return const Color(0xFFFFD200);
-      case 'activity': return const Color(0xFF6C63FF);
-      case 'context':  return const Color(0xFF0077B6);
-      case 'state':    return const Color(0xFFFDA085);
-      case 'dfd':      return const Color(0xFF2F80ED);
-      case 'gantt':    return const Color(0xFFEB5757);
-      default:         return AppColors.accent;
+      case 'erd':
+        return const Color(0xFF00D4FF);
+      case 'class':
+        return const Color(0xFF6C63FF);
+      case 'mindmap':
+        return const Color(0xFFFFA07A);
+      case 'usecase':
+        return const Color(0xFF38F9D7);
+      case 'sequence':
+        return const Color(0xFFFFD200);
+      case 'activity':
+        return const Color(0xFF6C63FF);
+      case 'context':
+        return const Color(0xFF0077B6);
+      case 'state':
+        return const Color(0xFFFDA085);
+      case 'dfd':
+        return const Color(0xFF2F80ED);
+      case 'gantt':
+        return const Color(0xFFEB5757);
+      default:
+        return AppColors.accent;
     }
   }
 
   IconData _typeIcon(String type) {
     switch (type) {
-      case 'erd':      return Icons.storage_rounded;
-      case 'class':    return Icons.code_rounded;
-      case 'mindmap':  return Icons.hub_rounded;
-      case 'usecase':  return Icons.person_rounded;
-      case 'sequence': return Icons.swap_horiz_rounded;
-      case 'activity': return Icons.alt_route_rounded;
-      case 'context':  return Icons.language_rounded;
-      case 'state':    return Icons.timeline_rounded;
-      case 'dfd':      return Icons.account_tree_rounded;
-      case 'gantt':    return Icons.bar_chart_rounded;
-      default:         return Icons.auto_awesome_rounded;
+      case 'erd':
+        return Icons.storage_rounded;
+      case 'class':
+        return Icons.code_rounded;
+      case 'mindmap':
+        return Icons.hub_rounded;
+      case 'usecase':
+        return Icons.person_rounded;
+      case 'sequence':
+        return Icons.swap_horiz_rounded;
+      case 'activity':
+        return Icons.alt_route_rounded;
+      case 'context':
+        return Icons.language_rounded;
+      case 'state':
+        return Icons.timeline_rounded;
+      case 'dfd':
+        return Icons.account_tree_rounded;
+      case 'gantt':
+        return Icons.bar_chart_rounded;
+      default:
+        return Icons.auto_awesome_rounded;
     }
   }
 
   String _statusLabel(String status) {
     switch (status) {
-      case 'done':       return 'Generated';
-      case 'processing': return 'Processing';
-      case 'pending':    return 'Pending';
-      case 'failed':     return 'Failed';
-      default:           return status;
+      case 'done':
+        return 'Generated';
+      case 'processing':
+        return 'Processing';
+      case 'pending':
+        return 'Pending';
+      case 'failed':
+        return 'Failed';
+      default:
+        return status;
     }
   }
 }
@@ -262,9 +298,9 @@ class _StatusDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (status) {
-      'done'   => AppColors.success,
+      'done' => AppColors.success,
       'failed' => AppColors.error,
-      _        => AppColors.warning,
+      _ => AppColors.warning,
     };
     return Container(
       width: 6,

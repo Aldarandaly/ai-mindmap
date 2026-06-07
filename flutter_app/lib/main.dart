@@ -5,9 +5,20 @@ import 'core/constants/app_colors.dart';
 import 'core/network/api_client.dart';
 import 'shared/widgets/network_background.dart';
 import 'features/onboarding/ui/onboarding_screen.dart';
+import 'package:flutter/services.dart';
+import '../../../core/constants/app_sizes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
+
   final hasToken = await ApiClient().hasToken();
   runApp(MyApp(isLoggedIn: hasToken));
 }
@@ -18,6 +29,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppSizes.init(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
@@ -44,9 +56,18 @@ class MyApp extends StatelessWidget {
           backgroundColor: AppColors.surface,
           selectedItemColor: AppColors.primary,
           unselectedItemColor: AppColors.textTertiary,
+          elevation: 0,
         ),
       ),
-      builder: (context, child) => AppBackground(child: child!), 
+      builder: (context, child) {
+        AppSizes.init(context);
+        return MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.noScaling),
+          child: AppBackground(child: child!),
+        );
+      },
       home: isLoggedIn ? const MainScreen() : const OnboardingScreen(),
     );
   }

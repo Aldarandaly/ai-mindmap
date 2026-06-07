@@ -91,9 +91,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final result = await Navigator.push<Diagram>(
       context,
       MaterialPageRoute(
-        builder: (_) => CreateDiagramScreen(
-          projectId: widget.project.id,
-        ),
+        builder: (_) => CreateDiagramScreen(projectId: widget.project.id),
       ),
     );
 
@@ -116,16 +114,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
   // OPEN AI CHAT
   void _openChat() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ChatScreen(project: widget.project),
-    ),
-  );
-}
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ChatScreen(project: widget.project)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    AppSizes.init(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
 
@@ -135,7 +132,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           children: [
             // HEADER
             Padding(
-              padding: const EdgeInsets.fromLTRB(
+              padding: EdgeInsets.fromLTRB(
                 AppSizes.screenPadding,
                 AppSizes.md,
                 AppSizes.screenPadding,
@@ -157,7 +154,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     padding: EdgeInsets.zero,
                   ),
 
-                  const SizedBox(width: AppSizes.sm),
+                  SizedBox(width: AppSizes.sm),
 
                   // PROJECT INFO
                   Expanded(
@@ -188,7 +185,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               ),
             ),
 
-            const SizedBox(height: AppSizes.md),
+            SizedBox(height: AppSizes.md),
 
             // FILTER CHIPS
             SizedBox(
@@ -197,7 +194,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
 
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: AppSizes.screenPadding,
                 ),
 
@@ -260,7 +257,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               ),
             ),
 
-            const SizedBox(height: AppSizes.md),
+            SizedBox(height: AppSizes.md),
 
             // BODY
             Expanded(
@@ -331,7 +328,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   // LOADING
   Widget _buildLoading() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
 
       itemCount: 3,
 
@@ -362,11 +359,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             color: AppColors.textTertiary,
           ),
 
-          const SizedBox(height: AppSizes.md),
+          SizedBox(height: AppSizes.md),
 
           Text(_error!, style: AppTextStyles.bodyMedium),
 
-          const SizedBox(height: AppSizes.md),
+          SizedBox(height: AppSizes.md),
 
           TextButton(
             onPressed: _loadDiagrams,
@@ -388,7 +385,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
 
-        children: const [
+        children: [
           Icon(
             Icons.auto_awesome_rounded,
             size: 60,
@@ -430,7 +427,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       color: AppColors.primary,
 
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(
+        padding: EdgeInsets.symmetric(
           horizontal: AppSizes.screenPadding,
           vertical: AppSizes.sm,
         ),

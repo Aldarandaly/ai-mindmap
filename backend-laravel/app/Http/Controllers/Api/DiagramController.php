@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Diagram;
+use App\Services\AIService;
 use Illuminate\Http\Request;
 use App\Services\DiagramService;
 
@@ -43,6 +44,40 @@ class DiagramController extends Controller
         $diagram = $this->diagramService->generate($request->all(), $request->user());
 
         return response()->json($diagram, 201);
+    }
+
+    public function edit(Request $request)
+    {
+        $request->validate([
+            'current_code' => 'required|string',
+            'message'      => 'required|string',
+            'type'         => 'required|string',
+            'history'      => 'nullable|array',
+        ]);
+
+        $response = app(AIService::class)->editDiagram(
+            $request->current_code,
+            $request->message,
+            $request->type,
+            $request->history ?? []
+        );
+
+        return response()->json($response);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $diagram = \App\Models\Diagram::findOrFail($id);
+
+        if ($diagram->project->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $diagram->update([
+            'diagram_code' => $request->diagram_code,
+        ]);
+
+        return response()->json($diagram);
     }
 
     public function recent(Request $request)

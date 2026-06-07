@@ -15,8 +15,7 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen>
-    with TickerProviderStateMixin {
+class _MainScreenState extends State<MainScreen> with TickerProviderStateMixin {
   int _currentIndex = 0;
 
   VoidCallback? _showCreateModal;
@@ -51,10 +50,7 @@ class _MainScreenState extends State<MainScreen>
     );
 
     _tabAnimations = _tabControllers
-        .map((c) => CurvedAnimation(
-              parent: c,
-              curve: Curves.easeOutCubic,
-            ))
+        .map((c) => CurvedAnimation(parent: c, curve: Curves.easeOutCubic))
         .toList();
 
     _tabControllers[0].forward();
@@ -79,14 +75,14 @@ class _MainScreenState extends State<MainScreen>
 
   // ───────────────────────── LOAD USER
   Future<void> _initUser() async {
-  try {
-    final user = await _apiClient.get('/user');
+    try {
+      final user = await _apiClient.get('/user');
 
-    if (user != null) {
-      UserNotifier.userName.value = user['name'] ?? '';
-    }
-  } catch (_) {}
-}
+      if (user != null) {
+        UserNotifier.userName.value = user['name'] ?? '';
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -127,10 +123,7 @@ class _MainScreenState extends State<MainScreen>
       extendBody: true,
       backgroundColor: Colors.transparent,
 
-      body: IndexedStack(
-        index: _currentIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: screens),
 
       // ───────── FAB
       floatingActionButton: _currentIndex == 0
@@ -148,10 +141,7 @@ class _MainScreenState extends State<MainScreen>
                     height: 62,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF7C6FFF),
-                          Color(0xFF9B59B6),
-                        ],
+                        colors: [Color(0xFF7C6FFF), Color(0xFF9B59B6)],
                       ),
                       borderRadius: BorderRadius.circular(22),
                     ),
@@ -166,8 +156,7 @@ class _MainScreenState extends State<MainScreen>
             )
           : null,
 
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.endFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -175,9 +164,14 @@ class _MainScreenState extends State<MainScreen>
 
   // ───────── BOTTOM NAV
   Widget _buildBottomNav() {
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Container(
-      height: 68,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.only(
+        left: 8,
+        right: 8,
+        bottom: bottomPadding > 0 ? bottomPadding : 8,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF13131A).withOpacity(0.97),
         boxShadow: [
@@ -228,8 +222,7 @@ class _MainScreenState extends State<MainScreen>
               item.label,
               style: TextStyle(
                 fontSize: AppSizes.fontXs,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected
                     ? const Color(0xFF8B7FFF)
                     : AppColors.textSecondary,

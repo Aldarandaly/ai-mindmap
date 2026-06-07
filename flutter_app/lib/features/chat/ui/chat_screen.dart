@@ -7,10 +7,7 @@ import '../../projects/data/projects_model.dart';
 class ChatScreen extends StatefulWidget {
   final Project project;
 
-  const ChatScreen({
-    super.key,
-    required this.project,
-  });
+  const ChatScreen({super.key, required this.project});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -43,8 +40,9 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response =
-          await _client.get('/projects/${widget.project.id}/chats');
+      final response = await _client.get(
+        '/projects/${widget.project.id}/chats',
+      );
 
       final List data = response is List ? response : [];
 
@@ -67,8 +65,8 @@ class _ChatScreenState extends State<ChatScreen> {
             'role': 'ai',
             'message':
                 'Hi! I\'m your AI assistant for the "${widget.project.name}" project. '
-                    'I can help you create and improve diagrams. '
-                    'What would you like to do?',
+                'I can help you create and improve diagrams. '
+                'What would you like to do?',
           });
         });
       }
@@ -87,10 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _controller.clear();
 
     setState(() {
-      _messages.add({
-        'role': 'user',
-        'message': text,
-      });
+      _messages.add({'role': 'user', 'message': text});
 
       _isSending = true;
     });
@@ -106,8 +101,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _messages.add({
           'role': 'ai',
-          'message':
-              response['reply'] ?? 'Sorry, something went wrong.',
+          'message': response['reply'] ?? 'Sorry, something went wrong.',
         });
 
         _isSending = false;
@@ -150,10 +144,7 @@ class _ChatScreenState extends State<ChatScreen> {
         elevation: 0,
 
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 20,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           color: AppColors.textPrimary,
           onPressed: () => Navigator.pop(context),
         ),
@@ -161,7 +152,7 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'AI Assistant',
               style: TextStyle(
                 fontSize: AppSizes.fontLg,
@@ -172,7 +163,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
             Text(
               widget.project.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppSizes.fontSm,
                 color: AppColors.textSecondary,
               ),
@@ -182,11 +173,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: AppSizes.md),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 4,
-            ),
+            margin: EdgeInsets.only(right: AppSizes.md),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
@@ -208,7 +196,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 const SizedBox(width: 4),
 
-                const Text(
+                Text(
                   'Online',
                   style: TextStyle(
                     fontSize: AppSizes.fontXs,
@@ -228,17 +216,12 @@ class _ChatScreenState extends State<ChatScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   )
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(
-                      AppSizes.screenPadding,
-                    ),
-                    itemCount:
-                        _messages.length + (_isSending ? 1 : 0),
+                    padding: EdgeInsets.all(AppSizes.screenPadding),
+                    itemCount: _messages.length + (_isSending ? 1 : 0),
                     itemBuilder: (_, i) {
                       if (i == _messages.length) {
                         return _buildTypingIndicator();
@@ -260,12 +243,11 @@ class _ChatScreenState extends State<ChatScreen> {
     final isUser = msg['role'] == 'user';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      padding: EdgeInsets.only(bottom: AppSizes.sm),
       child: Row(
-        mainAxisAlignment:
-            isUser
-                ? MainAxisAlignment.end
-                : MainAxisAlignment.start,
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
 
         crossAxisAlignment: CrossAxisAlignment.end,
 
@@ -290,39 +272,25 @@ class _ChatScreenState extends State<ChatScreen> {
 
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color:
-                    isUser
-                        ? AppColors.primary
-                        : AppColors.surface,
+                color: isUser ? AppColors.primary : AppColors.surface,
 
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
-                  bottomLeft:
-                      Radius.circular(isUser ? 16 : 4),
-                  bottomRight:
-                      Radius.circular(isUser ? 4 : 16),
+                  bottomLeft: Radius.circular(isUser ? 16 : 4),
+                  bottomRight: Radius.circular(isUser ? 4 : 16),
                 ),
 
-                border: isUser
-                    ? null
-                    : Border.all(
-                        color: AppColors.border,
-                      ),
+                border: isUser ? null : Border.all(color: AppColors.border),
               ),
 
               child: Text(
                 msg['message']!,
                 style: TextStyle(
                   fontSize: AppSizes.fontSm,
-                  color: isUser
-                      ? Colors.white
-                      : AppColors.textPrimary,
+                  color: isUser ? Colors.white : AppColors.textPrimary,
                   height: 1.5,
                 ),
               ),
@@ -337,7 +305,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildTypingIndicator() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSizes.sm),
+      padding: EdgeInsets.only(bottom: AppSizes.sm),
       child: Row(
         children: [
           Container(
@@ -357,10 +325,7 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(width: 8),
 
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: const BorderRadius.only(
@@ -409,7 +374,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return SafeArea(
       top: false,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           AppSizes.screenPadding,
           AppSizes.sm,
           AppSizes.screenPadding,
@@ -417,11 +382,7 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         decoration: const BoxDecoration(
           color: AppColors.surface,
-          border: Border(
-            top: BorderSide(
-              color: AppColors.border,
-            ),
-          ),
+          border: Border(top: BorderSide(color: AppColors.border)),
         ),
         child: Row(
           children: [
@@ -429,7 +390,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: TextField(
                 controller: _controller,
 
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: AppSizes.fontSm,
                 ),
@@ -442,7 +403,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 decoration: InputDecoration(
                   hintText: 'Ask AI about your diagrams...',
 
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     color: AppColors.textTertiary,
                     fontSize: AppSizes.fontSm,
                   ),
@@ -450,34 +411,23 @@ class _ChatScreenState extends State<ChatScreen> {
                   filled: true,
                   fillColor: AppColors.background,
 
-                  contentPadding:
-                      const EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 10,
                   ),
 
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppSizes.radiusRound,
-                    ),
-                    borderSide: const BorderSide(
-                      color: AppColors.border,
-                    ),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                    borderSide: const BorderSide(color: AppColors.border),
                   ),
 
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppSizes.radiusRound,
-                    ),
-                    borderSide: const BorderSide(
-                      color: AppColors.border,
-                    ),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusRound),
+                    borderSide: const BorderSide(color: AppColors.border),
                   ),
 
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppSizes.radiusRound,
-                    ),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusRound),
                     borderSide: const BorderSide(
                       color: AppColors.primary,
                       width: 1.5,
@@ -487,7 +437,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
 
-            const SizedBox(width: AppSizes.sm),
+            SizedBox(width: AppSizes.sm),
 
             GestureDetector(
               onTap: _isSending ? null : _sendMessage,
@@ -499,9 +449,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 height: 44,
 
                 decoration: BoxDecoration(
-                  color: _isSending
-                      ? AppColors.border
-                      : AppColors.primary,
+                  color: _isSending ? AppColors.border : AppColors.primary,
 
                   borderRadius: BorderRadius.circular(22),
 
@@ -509,8 +457,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       ? []
                       : [
                           BoxShadow(
-                            color: AppColors.primary
-                                .withValues(alpha: 0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),

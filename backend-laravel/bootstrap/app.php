@@ -12,17 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-
+    ->withMiddleware(function (Middleware $middleware) {
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
-
-        $middleware->alias([
-            'plan' => CheckPlan::class,
+        $middleware->validateCsrfTokens(except: [
+            'api/payment/webhook',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
-

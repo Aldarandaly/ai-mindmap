@@ -4,7 +4,12 @@ class AppConstants {
   // ── API ───────────────────────────────────────────────────
   static String get baseUrl {
     if (kIsWeb) return 'http://localhost:8000/api';
-    return 'http://192.168.1.150:8000/api';
+    return 'https://handwork-licorice-grazing.ngrok-free.dev/api';
+  }
+
+  static String get pythonUrl {
+    if (kIsWeb) return 'http://localhost:8003';
+    return 'http://192.168.1.150:8003';
   }
 
   static const Duration connectTimeout = Duration(seconds: 30);
@@ -16,7 +21,7 @@ class AppConstants {
 
   // ── Polling (diagram status) ──────────────────────────────
   static const Duration pollingInterval = Duration(seconds: 3);
-  static const int maxPollingAttempts = 20; // 20 × 3s = 60s max
+  static const int maxPollingAttempts = 20;
 
   // ── Diagram Types (API values) ────────────────────────────
   static const String typeAuto = 'auto';

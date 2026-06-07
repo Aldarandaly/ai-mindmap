@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 
+
 class AppButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -76,10 +77,10 @@ class AppButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: AppSizes.iconSm),
-          const SizedBox(width: AppSizes.sm),
+          SizedBox(width: AppSizes.sm),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppSizes.fontMd,
               fontWeight: FontWeight.w600,
             ),
@@ -90,10 +91,7 @@ class AppButton extends StatelessWidget {
 
     return Text(
       label,
-      style: const TextStyle(
-        fontSize: AppSizes.fontMd,
-        fontWeight: FontWeight.w600,
-      ),
+      style: TextStyle(fontSize: AppSizes.fontMd, fontWeight: FontWeight.w600),
     );
   }
 }

@@ -20,7 +20,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.auto_awesome_rounded,
       title: 'AI-Powered Diagrams',
       subtitle: 'DiagramAI',
-      description: 'Transform your ideas into professional diagrams instantly using advanced AI. Just describe what you need in plain text.',
+      description:
+          'Transform your ideas into professional diagrams instantly using advanced AI. Just describe what you need in plain text.',
       gradient: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
       features: ['ERD Diagrams', 'Class Diagrams', 'Mind Maps', 'And more...'],
     ),
@@ -28,30 +29,48 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.bolt_rounded,
       title: 'Fast & Smart',
       subtitle: 'Generate in seconds',
-      description: 'No more manual drawing. Our AI understands your requirements and generates accurate diagrams in seconds.',
+      description:
+          'No more manual drawing. Our AI understands your requirements and generates accurate diagrams in seconds.',
       gradient: [Color(0xFF0D9488), Color(0xFF0891B2)],
-      features: ['Auto-detect diagram type', 'Smart suggestions', 'Multiple diagram types', 'Export to PNG & PDF'],
+      features: [
+        'Auto-detect diagram type',
+        'Smart suggestions',
+        'Multiple diagram types',
+        'Export to PNG & PDF',
+      ],
     ),
     _OnboardingPage(
       icon: Icons.folder_rounded,
       title: 'Organize & Export',
       subtitle: 'Your workspace',
-      description: 'Keep all your diagrams organized in projects. Export them in multiple formats and share with your team.',
+      description:
+          'Keep all your diagrams organized in projects. Export them in multiple formats and share with your team.',
       gradient: [Color(0xFFDB2777), Color(0xFF9333EA)],
-      features: ['Project management', 'Export PNG & PDF', 'Share Mermaid code', 'Unlimited projects'],
+      features: [
+        'Project management',
+        'Export PNG & PDF',
+        'Share Mermaid code',
+        'Unlimited projects',
+      ],
     ),
   ];
 
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     } else {
       _goToLogin();
     }
   }
 
   void _goToLogin() {
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
   }
 
   @override
@@ -62,6 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    AppSizes.init(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -81,9 +101,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: SafeArea(
               child: TextButton(
                 onPressed: _goToLogin,
-                child: const Text(
+                child: Text(
                   'Skip',
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: AppSizes.fontMd, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: AppSizes.fontMd,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -91,25 +115,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           // ── Bottom Controls ──
           Positioned(
-            bottom: 0, left: 0, right: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(AppSizes.screenPadding, 0, AppSizes.screenPadding, AppSizes.lg),
+                padding: EdgeInsets.fromLTRB(
+                  AppSizes.screenPadding,
+                  0,
+                  AppSizes.screenPadding,
+                  AppSizes.lg,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Dots
                     Row(
-                      children: List.generate(_pages.length, (i) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(right: 6),
-                        width: _currentPage == i ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == i ? AppColors.primary : AppColors.border,
-                          borderRadius: BorderRadius.circular(4),
+                      children: List.generate(
+                        _pages.length,
+                        (i) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.only(right: 6),
+                          width: _currentPage == i ? 24 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _currentPage == i
+                                ? AppColors.primary
+                                : AppColors.border,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
-                      )),
+                      ),
                     ),
 
                     // Next / Get Started Button
@@ -117,21 +153,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       onTap: _nextPage,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(AppSizes.radiusRound),
-                          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                          borderRadius: BorderRadius.circular(
+                            AppSizes.radiusRound,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              _currentPage == _pages.length - 1 ? 'Get Started' : 'Next',
-                              style: const TextStyle(color: Colors.white, fontSize: AppSizes.fontMd, fontWeight: FontWeight.w600),
+                              _currentPage == _pages.length - 1
+                                  ? 'Get Started'
+                                  : 'Next',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: AppSizes.fontMd,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(width: 6),
-                            const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                           ],
                         ),
                       ),
@@ -148,7 +205,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildPage(_OnboardingPage page) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
+      padding: EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -156,16 +213,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           // ── Icon ──
           Container(
-            width: 120, height: 120,
+            width: 120,
+            height: 120,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: page.gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+              gradient: LinearGradient(
+                colors: page.gradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(32),
-              boxShadow: [BoxShadow(color: page.gradient[0].withValues(alpha: 0.4), blurRadius: 24, offset: const Offset(0, 8))],
+              boxShadow: [
+                BoxShadow(
+                  color: page.gradient[0].withValues(alpha: 0.4),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Icon(page.icon, size: 56, color: Colors.white),
           ),
 
-          const SizedBox(height: AppSizes.xl),
+          SizedBox(height: AppSizes.xl),
 
           // ── Subtitle ──
           Container(
@@ -173,57 +241,91 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             decoration: BoxDecoration(
               color: page.gradient[0].withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: page.gradient[0].withValues(alpha: 0.3)),
+              border: Border.all(
+                color: page.gradient[0].withValues(alpha: 0.3),
+              ),
             ),
-            child: Text(page.subtitle, style: TextStyle(fontSize: AppSizes.fontSm, color: page.gradient[0], fontWeight: FontWeight.w600)),
+            child: Text(
+              page.subtitle,
+              style: TextStyle(
+                fontSize: AppSizes.fontSm,
+                color: page.gradient[0],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
 
-          const SizedBox(height: AppSizes.md),
+          SizedBox(height: AppSizes.md),
 
           // ── Title ──
           Text(
             page.title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.textPrimary, height: 1.2),
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+              height: 1.2,
+            ),
           ),
 
-          const SizedBox(height: AppSizes.md),
+          SizedBox(height: AppSizes.md),
 
           // ── Description ──
           Text(
             page.description,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: AppSizes.fontMd, color: AppColors.textSecondary, height: 1.6),
+            style: TextStyle(
+              fontSize: AppSizes.fontMd,
+              color: AppColors.textSecondary,
+              height: 1.6,
+            ),
           ),
 
-          const SizedBox(height: AppSizes.xl),
+          SizedBox(height: AppSizes.xl),
 
           // ── Features ──
           Container(
-            padding: const EdgeInsets.all(AppSizes.md),
+            padding: EdgeInsets.all(AppSizes.md),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(AppSizes.radiusLg),
               border: Border.all(color: AppColors.border),
             ),
             child: Column(
-              children: page.features.map((f) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 20, height: 20,
-                      decoration: BoxDecoration(
-                        color: page.gradient[0].withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+              children: page.features
+                  .map(
+                    (f) => Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: page.gradient[0].withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.check_rounded,
+                              size: 12,
+                              color: page.gradient[0],
+                            ),
+                          ),
+                          SizedBox(width: AppSizes.sm),
+                          Text(
+                            f,
+                            style: TextStyle(
+                              fontSize: AppSizes.fontSm,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Icon(Icons.check_rounded, size: 12, color: page.gradient[0]),
                     ),
-                    const SizedBox(width: AppSizes.sm),
-                    Text(f, style: const TextStyle(fontSize: AppSizes.fontSm, color: AppColors.textPrimary, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              )).toList(),
+                  )
+                  .toList(),
             ),
           ),
 
