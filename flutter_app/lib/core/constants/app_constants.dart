@@ -4,7 +4,7 @@ class AppConstants {
   // ── API ───────────────────────────────────────────────────
   static String get baseUrl {
     if (kIsWeb) return 'http://localhost:8000/api';
-    return 'https://handwork-licorice-grazing.ngrok-free.dev/api';
+    return 'https://ai-mindmap-production.up.railway.app/api';
   }
 
   static String get pythonUrl {
