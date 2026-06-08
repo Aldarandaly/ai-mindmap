@@ -4,6 +4,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/network/api_client.dart';
 import '../data/plan_model.dart';
+import '../../../features/main/ui/main.screen.dart';
 
 class PaymentScreen extends StatefulWidget {
   final PlanModel plan;
@@ -367,9 +368,10 @@ class PaymentResultScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (success) {
-                      // ارجع لـ CreateDiagramScreen
-                      int count = 0;
-                      Navigator.of(context).popUntil((_) => count++ >= 3);
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const MainScreen()),
+                        (_) => false,
+                      );
                     } else {
                       Navigator.of(context).popUntil((route) => route.isFirst);
                     }
