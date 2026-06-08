@@ -9,7 +9,7 @@ class AppConstants {
 
   static String get pythonUrl {
     if (kIsWeb) return 'http://localhost:8003';
-    return 'http://192.168.1.150:8003';
+    return 'http://fabulous-dedication-production-926e.up.railway.app';
   }
 
   static const Duration connectTimeout = Duration(seconds: 30);
