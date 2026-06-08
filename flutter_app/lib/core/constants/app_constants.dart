@@ -12,8 +12,8 @@ class AppConstants {
     return 'https://fabulous-dedication-production-926e.up.railway.app';
   }
 
-  static const Duration connectTimeout = Duration(seconds: 30);
-  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 
   // ── Secure Storage Keys ───────────────────────────────────
   static const String tokenKey = 'auth_token';
