@@ -155,19 +155,41 @@ class ApiClient {
 
       case 404:
         return NotFoundException(
-          message: e.response?.data?['message'] ?? 'Not found.',
+          message: e.response?.data is Map
+              ? (e.response?.data['message']?.toString() ?? 'Not found.')
+              : 'Not found.',
         );
 
       case 422:
-        final errors = e.response?.data?['errors'] as Map<String, dynamic>?;
+        print('❌ 422 RAW DATA: ${e.response?.data}');
+        print('❌ 422 DATA TYPE: ${e.response?.data.runtimeType}');
+        try {
+          final data = e.response?.data;
+          String msg = 'Validation error.';
 
-        final first = errors?.values.first;
+          if (data is Map) {
+            final errors = data['errors'];
+            if (errors is Map && errors.isNotEmpty) {
+              final first = errors.values.first;
+              if (first is List && first.isNotEmpty) {
+                msg = first[0].toString();
+              } else if (first is String) {
+                msg = first;
+              }
+            } else if (data['message'] is String) {
+              msg = data['message'];
+            }
+          } else if (data is String) {
+            msg = data;
+          }
 
-        final msg = first is List
-            ? first.first.toString()
-            : e.response?.data?['message']?.toString() ?? 'Validation error.';
-
-        return ApiException(message: msg, statusCode: 422);
+          return ApiException(message: msg, statusCode: 422);
+        } catch (ex) {
+          return const ApiException(
+            message: 'Validation error.',
+            statusCode: 422,
+          );
+        }
 
       default:
         if (e.type == DioExceptionType.connectionTimeout ||
@@ -176,10 +198,18 @@ class ApiClient {
           return const NetworkException();
         }
 
+        String defaultMsg = 'Something went wrong.';
+        try {
+          final data = e.response?.data;
+          if (data is Map) {
+            defaultMsg = data['message']?.toString() ?? defaultMsg;
+          } else if (data is String) {
+            defaultMsg = data;
+          }
+        } catch (_) {}
+
         return ApiException(
-          message:
-              e.response?.data?['message']?.toString() ??
-              'Something went wrong.',
+          message: defaultMsg,
           statusCode: e.response?.statusCode,
         );
     }

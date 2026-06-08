@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\PaymentController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/plans', [PaymentController::class, 'plans']);
 Route::post('/payment/webhook', [PaymentController::class, 'webhook']);
 

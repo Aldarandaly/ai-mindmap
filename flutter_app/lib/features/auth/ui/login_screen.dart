@@ -5,6 +5,7 @@ import '../../../core/network/api_client.dart';
 import '../data/auth_repository.dart';
 import '../../main/ui/main.screen.dart';
 import 'register_screen.dart';
+import '../../../shared/widgets/app_snackbar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,16 +38,18 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
     if (result['success'] == true) {
       await ApiClient().loadToken();
-      if (mounted) Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (_) => const MainScreen()),
-      );
+      if (mounted)
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainScreen()),
+        );
     } else {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Something went wrong'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      if (mounted)
+        AppSnackbar.show(
+          context,
+          message: result['message'] ?? 'Something went wrong',
+          isError: true,
+        );
     }
   }
 
@@ -64,7 +67,11 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.fromLTRB(
-              28, 16, 28, MediaQuery.of(ctx).viewInsets.bottom + 28),
+            28,
+            16,
+            28,
+            MediaQuery.of(ctx).viewInsets.bottom + 28,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -77,8 +84,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Icon(Icons.lock_reset_rounded,
-                  size: 48, color: AppColors.primary),
+              const Icon(
+                Icons.lock_reset_rounded,
+                size: 48,
+                color: AppColors.primary,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Forgot Password',
@@ -92,8 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 'Enter your email and we\'ll send you a reset link',
                 textAlign: TextAlign.center,
-                style:
-                    TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 24),
               _buildGlassField(
@@ -109,7 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(14),
                   gradient: const LinearGradient(
-                      colors: [Color(0xFF6C63FF), Color(0xFF9B59B6)]),
+                    colors: [Color(0xFF6C63FF), Color(0xFF9B59B6)],
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF6C63FF).withValues(alpha: 0.4),
@@ -127,21 +137,21 @@ class _LoginScreenState extends State<LoginScreen> {
                         : () async {
                             if (emailController.text.trim().isEmpty) return;
                             setModalState(() => isLoading = true);
-                            final result = await _authRepository
-                                .forgotPassword(emailController.text.trim());
+                            final result = await _authRepository.forgotPassword(
+                              emailController.text.trim(),
+                            );
                             setModalState(() => isLoading = false);
                             if (!mounted) return;
                             Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(result['message'] ??
-                                    (result['success']
-                                        ? 'Reset link sent!'
-                                        : 'Something went wrong')),
-                                backgroundColor: result['success']
-                                    ? AppColors.primary
-                                    : AppColors.error,
-                              ),
+                            AppSnackbar.show(
+                              context,
+                              message:
+                                  result['message'] ??
+                                  (result['success']
+                                      ? 'Reset link sent!'
+                                      : 'Something went wrong'),
+                              isSuccess: result['success'] == true,
+                              isError: result['success'] != true,
                             );
                           },
                     child: Center(
@@ -150,7 +160,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
                             )
                           : const Text(
                               'Send Reset Link',
@@ -192,16 +204,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextSpan(
                         text: 'Mind',
                         style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white),
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
                       TextSpan(
                         text: 'Map',
                         style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.accent),
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.accent,
+                        ),
                       ),
                     ],
                   ),
@@ -210,9 +224,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'Think. Descrip. Generate.',
                   style: TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                      letterSpacing: 0.5),
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 _buildGlassField(
@@ -244,7 +259,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         setState(() => _obscurePassword = !_obscurePassword),
                   ),
                   validator: (val) {
-                    if (val == null || val.isEmpty) return 'Password is required';
+                    if (val == null || val.isEmpty)
+                      return 'Password is required';
                     if (val.length < 6) return 'Minimum 6 characters';
                     return null;
                   },
@@ -253,9 +269,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: _showForgotPassword,
-                    child: const Text('Forgot password?',
-                        style:
-                            TextStyle(color: AppColors.primary, fontSize: 13)),
+                    child: const Text(
+                      'Forgot password?',
+                      style: TextStyle(color: AppColors.primary, fontSize: 13),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -268,18 +285,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   children: [
                     Expanded(
-                        child: Divider(
-                            color: Colors.white.withValues(alpha: 0.15))),
+                      child: Divider(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('or',
-                          style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              fontSize: 12)),
+                      child: Text(
+                        'or',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                     Expanded(
-                        child: Divider(
-                            color: Colors.white.withValues(alpha: 0.15))),
+                      child: Divider(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -288,20 +312,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('No account? ',
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 14)),
+                    Text(
+                      'No account? ',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 14,
+                      ),
+                    ),
                     GestureDetector(
                       onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const RegisterScreen())),
-                      child: const Text('Create one',
-                          style: TextStyle(
-                              color: AppColors.accent,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600)),
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterScreen(),
+                        ),
+                      ),
+                      child: const Text(
+                        'Create one',
+                        style: TextStyle(
+                          color: AppColors.accent,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -314,8 +346,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLogo() {
-    return Image.asset('assets/images/logo.jpeg',
-        width: 100, height: 100, fit: BoxFit.contain);
+    return Image.asset(
+      'assets/images/logo.jpeg',
+      width: 100,
+      height: 100,
+      fit: BoxFit.contain,
+    );
   }
 
   Widget _buildGlassField({
@@ -335,52 +371,71 @@ class _LoginScreenState extends State<LoginScreen> {
       style: const TextStyle(color: Colors.white, fontSize: 15),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle:
-            TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 15),
-        prefixIcon:
-            Icon(icon, color: Colors.white.withValues(alpha: 0.4), size: 20),
+        hintStyle: TextStyle(
+          color: Colors.white.withValues(alpha: 0.35),
+          fontSize: 15,
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: Colors.white.withValues(alpha: 0.4),
+          size: 20,
+        ),
         suffixIcon: suffix,
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.08),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.15), width: 1)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: Colors.white.withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.15), width: 1)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: Colors.white.withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+        ),
         errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.error, width: 1.5)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
         focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.error, width: 1.5)),
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
       ),
     );
   }
 
-  Widget _buildGradientButton(
-      {required String label,
-      VoidCallback? onPressed,
-      bool isLoading = false}) {
+  Widget _buildGradientButton({
+    required String label,
+    VoidCallback? onPressed,
+    bool isLoading = false,
+  }) {
     return Container(
       width: double.infinity,
       height: AppSizes.buttonHeight,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         gradient: const LinearGradient(
-            colors: [Color(0xFF6C63FF), Color(0xFF9B59B6)]),
+          colors: [Color(0xFF6C63FF), Color(0xFF9B59B6)],
+        ),
         boxShadow: [
           BoxShadow(
-              color: const Color(0xFF6C63FF).withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6))
+            color: const Color(0xFF6C63FF).withValues(alpha: 0.4),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: Material(
@@ -394,13 +449,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2))
-                : Text(label,
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    label,
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5)),
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -424,12 +485,19 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.g_mobiledata,
-                  size: 22, color: Colors.white.withValues(alpha: 0.7)),
+              Icon(
+                Icons.g_mobiledata,
+                size: 22,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
               const SizedBox(width: 8),
-              Text('Continue with Google',
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
+              Text(
+                'Continue with Google',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 14,
+                ),
+              ),
             ],
           ),
         ),

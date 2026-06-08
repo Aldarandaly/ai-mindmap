@@ -9,17 +9,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE diagrams MODIFY COLUMN type ENUM(
-            'class', 'erd', 'mindmap', 'auto',
-            'usecase', 'activity', 'sequence',
-            'context', 'state', 'dfd', 'gantt'
-        ) DEFAULT 'auto'");
+        $driver = DB::getDriverName();
+
+        if ($driver === 'mysql') {
+            DB::statement("ALTER TABLE diagrams MODIFY COLUMN type ENUM(
+                'class', 'erd', 'mindmap', 'auto',
+                'usecase', 'activity', 'sequence',
+                'context', 'state', 'dfd', 'gantt'
+            ) DEFAULT 'auto'");
+        }
+        
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE diagrams MODIFY COLUMN type ENUM(
-            'class', 'erd', 'mindmap', 'auto'
-        ) DEFAULT 'auto'");
+        $driver = DB::getDriverName();
+
+        if ($driver === 'mysql') {
+            DB::statement("ALTER TABLE diagrams MODIFY COLUMN type ENUM(
+                'class', 'erd', 'mindmap', 'auto'
+            ) DEFAULT 'auto'");
+        }
     }
 };

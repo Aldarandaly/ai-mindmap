@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'features/auth/ui/login_screen.dart';
+import './features/reset/reset_password_screen.dart';
 import 'features/main/ui/main.screen.dart';
 import 'core/constants/app_colors.dart';
+import 'core/constants/app_sizes.dart';
 import 'core/network/api_client.dart';
 import 'shared/widgets/network_background.dart';
 import 'features/onboarding/ui/onboarding_screen.dart';
-import 'package:flutter/services.dart';
-import '../../../core/constants/app_sizes.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,14 +26,68 @@ void main() async {
   runApp(MyApp(isLoggedIn: hasToken));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final bool isLoggedIn;
   const MyApp({super.key, required this.isLoggedIn});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  static const _channel = MethodChannel('flutter/deeplink');
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkInitialLink();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _checkInitialLink() async {
+    try {
+      const channel = MethodChannel('flutter/deeplink');
+      final link = await channel.invokeMethod<String>('getInitialLink');
+      if (link != null) _processLink(link);
+
+      channel.setMethodCallHandler((call) async {
+        if (call.method == 'onLink') {
+          _processLink(call.arguments as String);
+        }
+      });
+    } catch (_) {}
+  }
+
+  void _processLink(String link) {
+    try {
+      final uri = Uri.parse(link);
+      if (uri.scheme == 'myapp' && uri.host == 'reset-password') {
+        final token = uri.queryParameters['token'] ?? '';
+        final email = uri.queryParameters['email'] ?? '';
+        if (token.isNotEmpty && email.isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            navigatorKey.currentState?.push(
+              MaterialPageRoute(
+                builder: (_) => ResetPasswordScreen(token: token, email: email),
+              ),
+            );
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
     AppSizes.init(context);
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.transparent,
@@ -68,7 +125,7 @@ class MyApp extends StatelessWidget {
           child: AppBackground(child: child!),
         );
       },
-      home: isLoggedIn ? const MainScreen() : const OnboardingScreen(),
+      home: widget.isLoggedIn ? const MainScreen() : const OnboardingScreen(),
     );
   }
 }

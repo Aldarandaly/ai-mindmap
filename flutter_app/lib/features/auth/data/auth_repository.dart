@@ -14,13 +14,10 @@ class AuthRepository {
         ApiEndpoints.login,
         data: {'email': email, 'password': password},
       );
-
       final token = response['token'] as String?;
       if (token != null) await _client.saveToken(token);
-
       final name = response['user']?['name'] as String?;
       if (name != null) await _client.saveUserName(name);
-
       return {'success': true, 'data': response};
     } on ApiException catch (e) {
       return {'success': false, 'message': e.message};
@@ -42,10 +39,8 @@ class AuthRepository {
           'password_confirmation': password,
         },
       );
-
       final token = response['token'] as String?;
       if (token != null) await _client.saveToken(token);
-
       return {'success': true, 'data': response};
     } on ApiException catch (e) {
       return {'success': false, 'message': e.message};
@@ -78,31 +73,27 @@ class AuthRepository {
   }
 
   Future<Map<String, dynamic>> resetPassword({
-  required String token,
-  required String email,
-  required String password,
-  required String passwordConfirmation,
-}) async {
-  try {
-    final response = await _client.post(
-      '/reset-password',
-      data: {
-        'token': token,
-        'email': email,
-        'password': password,
-        'password_confirmation': passwordConfirmation,
-      },
-    );
-
-    return {
-      'success': true,
-      'message': response['message'] ?? 'Password reset successful',
-    };
-  } catch (e) {
-    return {
-      'success': false,
-      'message': e.toString(),
-    };
+    required String token,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final response = await _client.post(
+        '/reset-password',
+        data: {
+          'token': token,
+          'email': email,
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        },
+      );
+      return {
+        'success': true,
+        'message': response['message'] ?? 'Password reset successfully',
+      };
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
   }
-}
 }
