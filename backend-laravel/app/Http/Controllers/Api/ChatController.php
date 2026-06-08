@@ -42,7 +42,7 @@ class ChatController extends Controller
 
         // Send to Python AI
         try {
-            $response = Http::post('http://127.0.0.1:8003/api/chat', [
+            $response = Http::timeout(120)->post(env('PYTHON_API_URL') . '/api/chat', [
                 'message' => $request->message,
                 'history' => $history,
                 'project_name' => $project->name,
