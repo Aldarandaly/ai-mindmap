@@ -69,13 +69,11 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
       begin: const Offset(0, -1),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _bannerCtrl, curve: Curves.easeOutCubic));
-
     _viewCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 280),
     )..forward();
     _viewFade = CurvedAnimation(parent: _viewCtrl, curve: Curves.easeOut);
-
     _copyCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 180),
@@ -172,7 +170,6 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
     StateSetter setSheetState,
   ) async {
     if (message.trim().isEmpty) return;
-
     setSheetState(() {
       _chatHistory.add({'role': 'user', 'content': message});
       _isChatLoading = true;
@@ -197,15 +194,12 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
         final data = jsonDecode(response.body);
         final newCode = data['diagram_code'] as String;
         final reply = data['reply'] as String;
-
         setSheetState(() {
           _chatHistory.add({'role': 'assistant', 'content': reply});
           _isChatLoading = false;
         });
-
         setState(() => _currentDiagramCode = newCode);
         _webController?.loadHtmlString(_buildHtml(newCode));
-
         try {
           await ApiClient().put(
             '/diagrams/${widget.diagram.id}',
@@ -274,7 +268,6 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   Widget _buildBanner() {
     final isDone = widget.diagram.isDone;
     final color = isDone ? AppColors.success : AppColors.warning;
-
     return SlideTransition(
       position: _bannerSlide,
       child: GestureDetector(
@@ -420,7 +413,6 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
 
   Widget _buildPreview() {
     if (_webController == null) return _buildFallback();
-
     return Container(
       margin: EdgeInsets.all(AppSizes.md),
       decoration: BoxDecoration(
@@ -869,7 +861,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
             _ExportOption(
               icon: Icons.image_rounded,
               label: 'PNG Image',
-              subtitle: 'High quality raster image',
+              subtitle: 'Full diagram, high quality',
               color1: AppColors.primary,
               color2: AppColors.accent,
               onTap: () {
@@ -881,7 +873,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
             _ExportOption(
               icon: Icons.picture_as_pdf_rounded,
               label: 'PDF Document',
-              subtitle: 'Vector quality for print',
+              subtitle: 'Full diagram, print quality',
               color1: const Color(0xFF9B59B6),
               color2: AppColors.primary,
               onTap: () {
@@ -936,7 +928,6 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
         .replaceAll('\r\n', '\n')
         .replaceAll('\r', '')
         .trim();
-
     return '''
 <!DOCTYPE html>
 <html>
@@ -973,22 +964,46 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   Future<void> _exportPNG() async {
     setState(() => _isExporting = true);
     try {
-      Uint8List? image =
-          _capturedImage ??
-          await _screenshotController.capture(pixelRatio: 2.0);
-      if (image == null) throw Exception('Could not capture diagram');
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/${widget.diagram.name}.png');
-      await file.writeAsBytes(image);
-      await Share.shareXFiles([XFile(file.path)], text: widget.diagram.name);
+      // ← بعت الكود للـ Python عشان يعمل PNG كامل
+      final response = await http
+          .post(
+            Uri.parse('${AppConstants.pythonUrl}/api/export/png'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'diagram_code': _currentDiagramCode,
+              'diagram_name': widget.diagram.name,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/${widget.diagram.name}.png');
+        await file.writeAsBytes(response.bodyBytes);
+        await Share.shareXFiles([XFile(file.path)], text: widget.diagram.name);
+      } else {
+        throw Exception('Server error');
+      }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Export failed: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+      // fallback للـ screenshot
+      try {
+        final img =
+            _capturedImage ??
+            await _screenshotController.capture(pixelRatio: 3.0);
+        if (img == null) throw Exception('Could not capture');
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/${widget.diagram.name}.png');
+        await file.writeAsBytes(img);
+        await Share.shareXFiles([XFile(file.path)], text: widget.diagram.name);
+      } catch (e2) {
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Export failed: $e2'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+      }
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
@@ -997,12 +1012,32 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   Future<void> _exportPDF() async {
     setState(() => _isExporting = true);
     try {
-      Uint8List? image =
-          _capturedImage ??
-          await _screenshotController.capture(pixelRatio: 2.0);
-      if (image == null) throw Exception('Could not capture diagram');
+      // ← بعت الكود للـ Python عشان يعمل PNG كامل وبعدين حوله لـ PDF
+      final response = await http
+          .post(
+            Uri.parse('${AppConstants.pythonUrl}/api/export/png'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'diagram_code': _currentDiagramCode,
+              'diagram_name': widget.diagram.name,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      Uint8List imageBytes;
+      if (response.statusCode == 200) {
+        imageBytes = response.bodyBytes;
+      } else {
+        imageBytes =
+            _capturedImage ??
+            await _screenshotController.capture(pixelRatio: 3.0) ??
+            Uint8List(0);
+      }
+
+      if (imageBytes.isEmpty) throw Exception('Could not get diagram image');
+
       final pdf = pw.Document();
-      final pdfImage = pw.MemoryImage(image);
+      final pdfImage = pw.MemoryImage(imageBytes);
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
@@ -1052,7 +1087,6 @@ class _ChatSheet extends StatefulWidget {
   final TextEditingController controller;
   final bool isLoading;
   final Future<void> Function(String) onSend;
-
   const _ChatSheet({
     required this.chatHistory,
     required this.controller,
@@ -1096,7 +1130,6 @@ class _ChatSheetState extends State<_ChatSheet> {
   Widget build(BuildContext context) {
     AppSizes.init(context);
     _scrollToBottom();
-
     return Container(
       height: MediaQuery.of(context).size.height * 0.80,
       margin: EdgeInsets.fromLTRB(AppSizes.sm, 0, AppSizes.sm, AppSizes.sm),
@@ -1107,7 +1140,6 @@ class _ChatSheetState extends State<_ChatSheet> {
       ),
       child: Column(
         children: [
-          // Header
           Padding(
             padding: EdgeInsets.fromLTRB(
               AppSizes.md,
@@ -1173,8 +1205,6 @@ class _ChatSheetState extends State<_ChatSheet> {
               ],
             ),
           ),
-
-          // Messages
           Expanded(
             child: widget.chatHistory.isEmpty
                 ? _buildEmptyChat()
@@ -1194,8 +1224,6 @@ class _ChatSheetState extends State<_ChatSheet> {
                     },
                   ),
           ),
-
-          // Input
           Container(
             padding: EdgeInsets.fromLTRB(
               AppSizes.md,
@@ -1414,8 +1442,6 @@ class _ChatSheetState extends State<_ChatSheet> {
   }
 }
 
-// ─── Chat Bubble ──────────────────────────────────────────────
-
 class _ChatBubble extends StatelessWidget {
   final String message;
   final bool isUser;
@@ -1514,8 +1540,6 @@ class _ChatBubble extends StatelessWidget {
   }
 }
 
-// ─── Suggestion Chip ──────────────────────────────────────────
-
 class _SuggestionChip extends StatelessWidget {
   final String label;
   const _SuggestionChip({required this.label});
@@ -1540,8 +1564,6 @@ class _SuggestionChip extends StatelessWidget {
     );
   }
 }
-
-// ─── Dot Pulse ────────────────────────────────────────────────
 
 class _DotPulse extends StatefulWidget {
   final int delay;
@@ -1593,8 +1615,6 @@ class _DotPulseState extends State<_DotPulse>
     );
   }
 }
-
-// ─── Toggle Chip ──────────────────────────────────────────────
 
 class _ToggleChip extends StatelessWidget {
   final String label;
@@ -1656,8 +1676,6 @@ class _ToggleChip extends StatelessWidget {
     );
   }
 }
-
-// ─── Export Option ────────────────────────────────────────────
 
 class _ExportOption extends StatelessWidget {
   final IconData icon;
