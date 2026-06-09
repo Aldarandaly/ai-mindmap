@@ -16,20 +16,23 @@ async def export_png(body: ExportRequest):
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
 <style>
 * {{margin:0;padding:0;box-sizing:border-box;}}
-body {{background:#0D1B2A;display:flex;justify-content:center;align-items:flex-start;padding:40px;min-height:100vh;}}
-.mermaid {{width:100%;}}
-.mermaid svg {{width:100% !important;height:auto !important;max-width:none !important;}}
+body {{background:#0D1B2A;padding:40px;width:fit-content;min-width:800px;}}
+.mermaid svg {{display:block;max-width:none !important;width:auto !important;height:auto !important;}}
 </style>
 </head><body>
-<div class="mermaid" id="diagram">{body.diagram_code}</div>
+<div id="diagram" class="mermaid">{body.diagram_code}</div>
 <script>
 mermaid.initialize({{
     startOnLoad: false,
     theme: 'dark',
     securityLevel: 'loose',
-    er: {{diagramPadding: 30}},
-    flowchart: {{padding: 30}},
-    sequence: {{diagramMarginX: 30, diagramMarginY: 30}},
+    themeVariables: {{
+        background: '#0D1B2A',
+        primaryColor: '#6C63FF',
+        primaryTextColor: '#ffffff',
+        lineColor: '#00D4FF',
+        secondaryColor: '#1A1828',
+    }},
 }});
 async function render() {{
     const el = document.getElementById('diagram');
@@ -42,33 +45,42 @@ render();
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(args=['--no-sandbox'])
-            page = await browser.new_page(viewport={{"width": 2000, "height": 1200}}, device_scale_factor=2)
+            
+            
+            page = await browser.new_page(
+                viewport={{"width": 2400, "height": 6000}},
+                device_scale_factor=2
+            )
             await page.set_content(html)
-            await page.wait_for_timeout(4000)
-
-            await page.wait_for_selector('.mermaid svg', timeout=10000)
- 
-            svg_box = await page.evaluate("""() => {
-                const svg = document.querySelector('.mermaid svg');
-                if (!svg) return null;
-                const rect = svg.getBoundingClientRect();
-                return {x: rect.x, y: rect.y, width: rect.width, height: rect.height};
+            
+            
+            await page.wait_for_selector('#diagram svg', timeout=15000)
+            await page.wait_for_timeout(2000)
+            
+            
+            real_size = await page.evaluate("""() => {
+                const svg = document.querySelector('#diagram svg');
+                if (!svg) return {width: 1200, height: 800};
+                const bbox = svg.getBBox();
+                const style = window.getComputedStyle(svg);
+                return {
+                    width: Math.max(svg.scrollWidth, bbox.width, parseInt(style.width) || 0) + 80,
+                    height: Math.max(svg.scrollHeight, bbox.height, parseInt(style.height) || 0) + 80,
+                };
             }""")
-
-            if svg_box and svg_box['width'] > 0:
-                padding = 40
-                screenshot = await page.screenshot(
-                    clip={{
-                        'x': max(0, svg_box['x'] - padding),
-                        'y': max(0, svg_box['y'] - padding),
-                        'width': svg_box['width'] + padding * 2,
-                        'height': svg_box['height'] + padding * 2,
-                    }},
-                    scale='device'
-                )
-            else:
-                screenshot = await page.screenshot(full_page=True, scale='device')
-
+            
+            w = max(int(real_size['width']), 800)
+            h = max(int(real_size['height']), 400)
+            
+            
+            await page.set_viewport_size({'width': w, 'height': h})
+            await page.wait_for_timeout(500)
+            
+            screenshot = await page.screenshot(
+                clip={'x': 0, 'y': 0, 'width': w, 'height': h},
+                scale='device'
+            )
+            
             await browser.close()
 
         return Response(content=screenshot, media_type="image/png")

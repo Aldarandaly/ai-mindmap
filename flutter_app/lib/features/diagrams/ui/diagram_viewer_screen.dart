@@ -937,9 +937,9 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { background: #0D1B2A; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .mermaid { max-width: 100%; overflow: auto; }
-    .mermaid svg { max-width: 100%; height: auto; }
+    html, body { background: #0D1B2A; padding: 16px; }
+    .mermaid { width: 100%; }
+    .mermaid svg { width: 100% !important; height: auto !important; display: block; }
   </style>
 </head>
 <body>
@@ -961,10 +961,29 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
 ''';
   }
 
+  Future<Uint8List?> _getFullDiagramImage() async {
+    try {
+      await _webController?.runJavaScript("""
+      document.body.style.overflow = 'visible';
+      const svg = document.querySelector('.mermaid svg');
+      if (svg) {
+        svg.style.width = svg.getBoundingClientRect().width + 'px';
+        svg.style.height = 'auto';
+        svg.style.overflow = 'visible';
+      }
+    """);
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final img = await _screenshotController.capture(pixelRatio: 3.0);
+      return img;
+    } catch (_) {
+      return _capturedImage;
+    }
+  }
+
   Future<void> _exportPNG() async {
     setState(() => _isExporting = true);
     try {
-      // ← بعت الكود للـ Python عشان يعمل PNG كامل
       final response = await http
           .post(
             Uri.parse('${AppConstants.pythonUrl}/api/export/png'),
@@ -974,7 +993,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               'diagram_name': widget.diagram.name,
             }),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final dir = await getTemporaryDirectory();
@@ -982,28 +1001,16 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
         await file.writeAsBytes(response.bodyBytes);
         await Share.shareXFiles([XFile(file.path)], text: widget.diagram.name);
       } else {
-        throw Exception('Server error');
+        throw Exception('Server error: ${response.statusCode}');
       }
     } catch (e) {
-      // fallback للـ screenshot
-      try {
-        final img =
-            _capturedImage ??
-            await _screenshotController.capture(pixelRatio: 3.0);
-        if (img == null) throw Exception('Could not capture');
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/${widget.diagram.name}.png');
-        await file.writeAsBytes(img);
-        await Share.shareXFiles([XFile(file.path)], text: widget.diagram.name);
-      } catch (e2) {
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Export failed: $e2'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-      }
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
     } finally {
       if (mounted) setState(() => _isExporting = false);
     }
@@ -1012,7 +1019,6 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   Future<void> _exportPDF() async {
     setState(() => _isExporting = true);
     try {
-      // ← بعت الكود للـ Python عشان يعمل PNG كامل وبعدين حوله لـ PDF
       final response = await http
           .post(
             Uri.parse('${AppConstants.pythonUrl}/api/export/png'),
@@ -1022,25 +1028,16 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               'diagram_name': widget.diagram.name,
             }),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 60));
 
-      Uint8List imageBytes;
-      if (response.statusCode == 200) {
-        imageBytes = response.bodyBytes;
-      } else {
-        imageBytes =
-            _capturedImage ??
-            await _screenshotController.capture(pixelRatio: 3.0) ??
-            Uint8List(0);
-      }
+      if (response.statusCode != 200) throw Exception('Server error');
 
-      if (imageBytes.isEmpty) throw Exception('Could not get diagram image');
-
+      final imageBytes = response.bodyBytes;
       final pdf = pw.Document();
       final pdfImage = pw.MemoryImage(imageBytes);
       pdf.addPage(
         pw.Page(
-          pageFormat: PdfPageFormat.a4,
+          pageFormat: PdfPageFormat.a4.landscape,
           margin: const pw.EdgeInsets.all(20),
           build: (ctx) => pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1053,7 +1050,11 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
                 ),
               ),
               pw.SizedBox(height: 10),
-              pw.Center(child: pw.Image(pdfImage)),
+              pw.Expanded(
+                child: pw.Center(
+                  child: pw.Image(pdfImage, fit: pw.BoxFit.contain),
+                ),
+              ),
             ],
           ),
         ),
