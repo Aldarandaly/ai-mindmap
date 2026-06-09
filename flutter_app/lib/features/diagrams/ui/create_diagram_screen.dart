@@ -45,7 +45,7 @@ class _CreateDiagramScreenState extends State<CreateDiagramScreen>
   bool _hasError = false;
   String _errorMessage = '';
   int _descriptionLength = 0;
-  static const int _maxDescriptionLength = 1000;
+  static const int _maxDescriptionLength = 5000;
 
   final List<String> _freeDiagramTypes = ['erd', 'class', 'mindmap'];
 

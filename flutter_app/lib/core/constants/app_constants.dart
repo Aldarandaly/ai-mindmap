@@ -41,5 +41,5 @@ class AppConstants {
   static const String statusFailed = 'failed';
 
   // ── Misc ─────────────────────────────────────────────────
-  static const int descriptionMaxLength = 1000;
+  static const int descriptionMaxLength = 5000;
 }
