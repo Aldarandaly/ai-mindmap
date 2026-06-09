@@ -38,7 +38,7 @@ async def export_png(body: ExportRequest):
 
             result = subprocess.run(
                 [
-                    'mmdc',
+                    '/usr/local/bin/mmdc',
                     '-i', input_file,
                     '-o', output_file,
                     '-c', config_file,
@@ -46,10 +46,10 @@ async def export_png(body: ExportRequest):
                     '-s', '2',
                     '--quiet'
                 ],
-                capture_output=True,
-                text=True,
-                timeout=60
-            )
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
 
             print(f"mmdc stdout: {result.stdout}")
             print(f"mmdc stderr: {result.stderr}")
