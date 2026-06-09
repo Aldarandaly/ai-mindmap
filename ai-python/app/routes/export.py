@@ -48,7 +48,7 @@ async def export_png(body: ExportRequest):
                 ],
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=120
         )
 
             print(f"mmdc stdout: {result.stdout}")

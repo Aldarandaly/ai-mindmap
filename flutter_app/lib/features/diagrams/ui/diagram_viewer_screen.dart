@@ -1028,7 +1028,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
               'diagram_name': widget.diagram.name,
             }),
           )
-          .timeout(const Duration(seconds: 60));
+          .timeout(const Duration(seconds: 120));
 
       if (response.statusCode != 200) throw Exception('Server error');
 
