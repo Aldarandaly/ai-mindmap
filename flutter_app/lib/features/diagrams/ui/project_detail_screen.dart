@@ -423,29 +423,105 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   Widget _buildList() {
     return RefreshIndicator(
       onRefresh: _loadDiagrams,
-
       color: AppColors.primary,
-
       child: ListView.builder(
         padding: EdgeInsets.symmetric(
           horizontal: AppSizes.screenPadding,
           vertical: AppSizes.sm,
         ),
-
         itemCount: _filtered.length,
-
-        itemBuilder: (_, i) => DiagramCard(
-          diagram: _filtered[i],
-
-          onTap: () {
-            Navigator.push(
-              context,
-
-              MaterialPageRoute(
-                builder: (_) => DiagramViewerScreen(diagram: _filtered[i]),
-              ),
-            );
+        itemBuilder: (_, i) => Dismissible(
+          key: Key(_filtered[i].id.toString()),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.85),
+              borderRadius: BorderRadius.circular(AppSizes.cardRadius),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 24),
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.delete_rounded, color: Colors.white, size: 28),
+                SizedBox(height: 4),
+                Text(
+                  'Delete',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          confirmDismiss: (_) async {
+            return await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: const Color(0xFF1A1828),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    title: const Text(
+                      'Delete Diagram',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    content: Text(
+                      'Are you sure you want to delete "${_filtered[i].name}"?',
+                      style: const TextStyle(color: Colors.white60),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(color: Colors.white54),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                ) ??
+                false;
           },
+          onDismissed: (_) async {
+            final diagram = _filtered[i];
+            setState(() {
+              _diagrams.removeWhere((d) => d.id == diagram.id);
+              _filterDiagrams();
+            });
+            try {
+              await _repo.deleteDiagram(diagram.id);
+            } catch (_) {
+              setState(() {
+                _diagrams.insert(0, diagram);
+                _filterDiagrams();
+              });
+            }
+          },
+          child: DiagramCard(
+            diagram: _filtered[i],
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DiagramViewerScreen(diagram: _filtered[i]),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

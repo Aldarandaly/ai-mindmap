@@ -30,7 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
     Route::get('/diagrams/{diagram}', [DiagramController::class, 'show']);
     Route::put('/diagrams/{diagram}', [DiagramController::class, 'update']);
-
+    Route::delete('/diagrams/{diagram}', [DiagramController::class, 'destroy']);
     Route::post('/diagrams/edit', [DiagramController::class, 'edit']);
 
     Route::get('/plan/current', [PaymentController::class, 'currentPlan']);

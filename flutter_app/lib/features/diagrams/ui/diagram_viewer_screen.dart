@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_app/core/network/api_client.dart';
+import 'package:ai_mindmap/core/network/api_client.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:path_provider/path_provider.dart';

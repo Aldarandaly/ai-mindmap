@@ -94,4 +94,13 @@ class DiagramController extends Controller
 
         return response()->json($diagrams);
     }
+
+    public function destroy(Request $request, Diagram $diagram)
+    {
+        if ($diagram->project->user_id !== $request->user()->id) {
+            abort(403);
+        }
+        $diagram->delete();
+        return response()->json(['message' => 'Diagram deleted successfully']);
+    }
 }
