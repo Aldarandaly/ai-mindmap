@@ -121,7 +121,7 @@ class _ProjectsBodyState extends State<ProjectsBody>
       backgroundColor: Colors.transparent,
       builder: (_) => Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).padding.bottom + 8, 
+          bottom: MediaQuery.of(context).padding.bottom + 8,
         ),
         child: CreateProjectModal(
           onCreated: (project) {
@@ -265,17 +265,99 @@ class _ProjectsBodyState extends State<ProjectsBody>
         padding: const EdgeInsets.only(left: 18, right: 18, bottom: 90),
         itemCount: _filtered.length,
         itemBuilder: (_, i) {
-          return _ProjectCard(
-            project: _filtered[i],
-            gradient: _gradients[i % _gradients.length],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProjectDetailScreen(project: _filtered[i]),
-                ),
-              );
+          return Dismissible(
+            key: Key(_filtered[i].id.toString()),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              margin: const EdgeInsets.only(bottom: 18),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 24),
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.delete_rounded, color: Colors.white, size: 28),
+                  SizedBox(height: 4),
+                  Text(
+                    'Delete',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            confirmDismiss: (_) async {
+              return await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: const Color(0xFF1A1828),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: const Text(
+                        'Delete Project',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      content: Text(
+                        'Are you sure you want to delete "${_filtered[i].name}"?',
+                        style: const TextStyle(color: Colors.white60),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ) ??
+                  false;
             },
+            onDismissed: (_) async {
+              final project = _filtered[i];
+              setState(() {
+                _projects.removeWhere((p) => p.id == project.id);
+                _filtered = _projects;
+              });
+              try {
+                await _repo.deleteProject(project.id);
+              } catch (_) {
+                setState(() {
+                  _projects.insert(0, project);
+                  _filtered = _projects;
+                });
+              }
+            },
+            child: _ProjectCard(
+              project: _filtered[i],
+              gradient: _gradients[i % _gradients.length],
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ProjectDetailScreen(project: _filtered[i]),
+                  ),
+                );
+              },
+            ),
           );
         },
       ),

@@ -27,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/diagrams/generate', [DiagramController::class, 'generate']);
     Route::get('/diagrams/recent', [DiagramController::class, 'recent']);
     Route::get('/projects/{project}/diagrams', [DiagramController::class, 'index']);
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy']);
     Route::get('/diagrams/{diagram}', [DiagramController::class, 'show']);
     Route::put('/diagrams/{diagram}', [DiagramController::class, 'update']);
 

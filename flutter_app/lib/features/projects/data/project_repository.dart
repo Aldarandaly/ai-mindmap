@@ -40,4 +40,13 @@ class ProjectRepository {
       return {'success': false, 'message': e.toString()};
     }
   }
+
+  Future<Map<String, dynamic>> deleteProject(int id) async {
+    try {
+      await ApiClient().delete('/projects/$id');
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
 }

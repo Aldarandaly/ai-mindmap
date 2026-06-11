@@ -16,6 +16,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
+import 'dart:ui' as ui;
 
 class DiagramViewerScreen extends StatefulWidget {
   final Diagram diagram;
@@ -93,7 +94,7 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
           NavigationDelegate(
             onPageFinished: (_) async {
               setState(() => _webViewLoading = false);
-              await Future.delayed(const Duration(seconds: 2));
+              await Future.delayed(const Duration(seconds: 4));
               await _captureWebView();
             },
           ),
@@ -106,8 +107,11 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
 
   Future<void> _captureWebView() async {
     try {
-      final img = await _screenshotController.capture(pixelRatio: 2.0);
-      if (mounted) setState(() => _capturedImage = img);
+      await _webController?.runJavaScript("window.scrollTo(0, 0)");
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      final img = await _screenshotController.capture(pixelRatio: 3.0);
+      if (mounted && img != null) setState(() => _capturedImage = img);
     } catch (_) {}
   }
 
@@ -933,27 +937,44 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=10.0, user-scalable=yes">
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { background: #0D1B2A; padding: 16px; }
-    .mermaid { width: 100%; }
-    .mermaid svg { width: 100% !important; height: auto !important; display: block; }
+    html, body { background: #0D1B2A; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    #container { display: flex; align-items: center; justify-content: center; transform-origin: center center; }
+    #diagram svg { display: block; max-width: none !important; }
   </style>
 </head>
 <body>
-  <div class="mermaid" id="diagram"></div>
+  <div id="container">
+    <div id="diagram" class="mermaid"></div>
+  </div>
   <script>
+    window.currentScale = 1;
+    
     mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'dark', themeVariables: { background: '#0D1B2A', primaryColor: '#6C63FF', primaryTextColor: '#ffffff', lineColor: '#00D4FF', secondaryColor: '#1A1828', tertiaryColor: '#1A1828' } });
-    const code = \`$cleanCode\`;
+    
     async function renderDiagram() {
       try {
-        const el = document.getElementById('diagram');
-        el.textContent = code;
+        document.getElementById('diagram').textContent = \`$cleanCode\`;
         await mermaid.run();
+        autoZoom();
       } catch(e) {}
     }
+    
+    function autoZoom() {
+      const svg = document.querySelector('#diagram svg');
+      if (!svg) return;
+      const svgWidth = svg.getBoundingClientRect().width;
+      const svgHeight = svg.getBoundingClientRect().height;
+      const scaleX = (window.innerWidth - 40) / svgWidth;
+      const scaleY = (window.innerHeight - 40) / svgHeight;
+      const scale = Math.min(scaleX, scaleY, 1);
+      window.currentScale = scale;
+      document.getElementById('container').style.transform = 'scale(' + scale + ')';
+    }
+    
     renderDiagram();
   </script>
 </body>
@@ -961,22 +982,11 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
 ''';
   }
 
-  Future<Uint8List?> _getFullDiagramImage() async {
+  Future<Uint8List?> _captureFullDiagram() async {
     try {
-      await _webController?.runJavaScript("""
-      document.body.style.overflow = 'visible';
-      const svg = document.querySelector('.mermaid svg');
-      if (svg) {
-        svg.style.width = svg.getBoundingClientRect().width + 'px';
-        svg.style.height = 'auto';
-        svg.style.overflow = 'visible';
-      }
-    """);
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      final img = await _screenshotController.capture(pixelRatio: 3.0);
-      return img;
-    } catch (_) {
+      final img = await _screenshotController.capture(pixelRatio: 6.0);
+      return img ?? _capturedImage;
+    } catch (e) {
       return _capturedImage;
     }
   }
@@ -984,25 +994,12 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   Future<void> _exportPNG() async {
     setState(() => _isExporting = true);
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConstants.pythonUrl}/api/export/png'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'diagram_code': _currentDiagramCode,
-              'diagram_name': widget.diagram.name,
-            }),
-          )
-          .timeout(const Duration(seconds: 60));
-
-      if (response.statusCode == 200) {
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/${widget.diagram.name}.png');
-        await file.writeAsBytes(response.bodyBytes);
-        await Share.shareXFiles([XFile(file.path)], text: widget.diagram.name);
-      } else {
-        throw Exception('Server error: ${response.statusCode}');
-      }
+      final img = await _captureFullDiagram();
+      if (img == null) throw Exception('Could not capture diagram');
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/${widget.diagram.name}.png');
+      await file.writeAsBytes(img);
+      await Share.shareXFiles([XFile(file.path)], text: widget.diagram.name);
     } catch (e) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1019,22 +1016,10 @@ class _DiagramViewerScreenState extends State<DiagramViewerScreen>
   Future<void> _exportPDF() async {
     setState(() => _isExporting = true);
     try {
-      final response = await http
-          .post(
-            Uri.parse('${AppConstants.pythonUrl}/api/export/png'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'diagram_code': _currentDiagramCode,
-              'diagram_name': widget.diagram.name,
-            }),
-          )
-          .timeout(const Duration(seconds: 120));
-
-      if (response.statusCode != 200) throw Exception('Server error');
-
-      final imageBytes = response.bodyBytes;
+      final img = await _captureFullDiagram();
+      if (img == null) throw Exception('Could not capture diagram');
       final pdf = pw.Document();
-      final pdfImage = pw.MemoryImage(imageBytes);
+      final pdfImage = pw.MemoryImage(img);
       pdf.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4.landscape,

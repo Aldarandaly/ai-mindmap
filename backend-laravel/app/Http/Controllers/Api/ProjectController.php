@@ -41,4 +41,12 @@ class ProjectController extends Controller
             $this->projectService->getProject($project, $request->user())
         );
     }
+    public function destroy(Request $request, Project $project)
+    {
+        if ($project->user_id !== $request->user()->id) {
+            abort(403);
+        }
+        $project->delete();
+        return response()->json(['message' => 'Project deleted successfully']);
+    }
 }
