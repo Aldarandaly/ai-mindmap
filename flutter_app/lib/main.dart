@@ -10,6 +10,7 @@ import 'shared/widgets/network_background.dart';
 import 'features/onboarding/ui/onboarding_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -88,6 +89,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     AppSizes.init(context);
     return MaterialApp(
       navigatorKey: navigatorKey,
+      navigatorObservers: [routeObserver],
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.transparent,
@@ -119,9 +121,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       builder: (context, child) {
         AppSizes.init(context);
         return MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.noScaling),
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
           child: AppBackground(child: child!),
         );
       },

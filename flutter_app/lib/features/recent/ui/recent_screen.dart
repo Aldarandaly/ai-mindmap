@@ -5,6 +5,7 @@ import '../../diagrams/data/diagram_model.dart';
 import '../../diagrams/data/diagram_repository.dart';
 import '../../diagrams/ui/diagram_viewer_screen.dart';
 import '../../diagrams/ui/widgets/diagram_card.dart';
+import '../../../main.dart';
 
 class RecentScreen extends StatefulWidget {
   const RecentScreen({super.key});
@@ -14,7 +15,7 @@ class RecentScreen extends StatefulWidget {
 }
 
 class _RecentScreenState extends State<RecentScreen>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, RouteAware {
   final _repo = DiagramRepository();
   List<Diagram> _diagrams = [];
   bool _isLoading = true;
@@ -26,6 +27,26 @@ class _RecentScreenState extends State<RecentScreen>
   @override
   void initState() {
     super.initState();
+    _loadRecent();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
     _loadRecent();
   }
 
@@ -74,7 +95,6 @@ class _RecentScreenState extends State<RecentScreen>
     );
   }
 
-  // ── Header ─────────────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -108,7 +128,6 @@ class _RecentScreenState extends State<RecentScreen>
     );
   }
 
-  // ── Shimmer ────────────────────────────────────────────────────────────────
   Widget _buildShimmer() {
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: AppSizes.screenPadding),
@@ -117,7 +136,6 @@ class _RecentScreenState extends State<RecentScreen>
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────────
   Widget _buildError() {
     return RefreshIndicator(
       onRefresh: _loadRecent,
@@ -198,7 +216,6 @@ class _RecentScreenState extends State<RecentScreen>
     );
   }
 
-  // ── Empty ──────────────────────────────────────────────────────────────────
   Widget _buildEmpty() {
     return RefreshIndicator(
       onRefresh: _loadRecent,
@@ -254,7 +271,6 @@ class _RecentScreenState extends State<RecentScreen>
     );
   }
 
-  // ── List ───────────────────────────────────────────────────────────────────
   Widget _buildList() {
     return RefreshIndicator(
       onRefresh: _loadRecent,
@@ -283,7 +299,6 @@ class _RecentScreenState extends State<RecentScreen>
   }
 }
 
-// ── Shimmer Card ──────────────────────────────────────────────────────────────
 class _ShimmerCard extends StatefulWidget {
   const _ShimmerCard();
 

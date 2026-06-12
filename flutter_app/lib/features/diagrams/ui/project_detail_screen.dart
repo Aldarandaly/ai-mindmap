@@ -502,13 +502,21 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
               _diagrams.removeWhere((d) => d.id == diagram.id);
               _filterDiagrams();
             });
-            try {
-              await _repo.deleteDiagram(diagram.id);
-            } catch (_) {
+
+            final result = await _repo.deleteDiagram(diagram.id);
+
+            if (!result['success']) {
               setState(() {
                 _diagrams.insert(0, diagram);
                 _filterDiagrams();
               });
+              if (mounted)
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Delete failed: ${result['message']}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
             }
           },
           child: DiagramCard(
